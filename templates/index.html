@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignaturePro — ЗП Дашборд</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .gradient-cal { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); }
+    .gradient-mgr { background: linear-gradient(135deg, #134e4a 0%, #0d9488 100%); }
+    .bar-fill     { transition: width 0.5s ease; }
+    .fade-in      { animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .detail-row:hover { background: #f0f6ff !important; }
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-thumb { background:#94a3b8; border-radius:3px; }
+    .tag { font-size:.68rem; padding:1px 6px; border-radius:4px; font-weight:700; }
+    .tag-E      { background:#dbeafe; color:#1d4ed8; }
+    .tag-ST     { background:#ede9fe; color:#6d28d9; }
+    .tag-EFAST  { background:#fef3c7; color:#92400e; }
+    .tag-OPTNEW { background:#d1fae5; color:#065f46; }
+    .tag-PRNEW  { background:#fce7f3; color:#9d174d; }
+    .tag-other  { background:#f3f4f6; color:#374151; }
+    input[type=date]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:.7; }
+    .modal-bg   { backdrop-filter: blur(2px); }
+    .salary-blur { filter: blur(6px); user-select: none; transition: filter .3s; }
+    .salary-blur:hover { filter: blur(3px); }
+    .emp-card { cursor: pointer; transition: box-shadow .2s; }
+    .emp-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.12); }
+    .qbtn { font-size:.75rem; padding:.35rem .75rem; border-radius:.5rem; border:1px solid; font-weight:500; transition:all .15s; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans" x-data="dashboard()" x-init="init()" x-cloak>
+
+  <!-- ═════════════════════════════════════════════════════ HEADER ══ -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
+
+      <!-- Лого -->
+      <div class="flex items-center gap-2 mr-1">
+        <div class="w-8 h-8 gradient-cal rounded-lg flex items-center justify-center text-white font-black text-sm select-none">SP</div>
+        <span class="font-bold text-slate-800 text-lg">SignaturePro</span>
+        <span class="text-slate-400 text-sm hidden sm:inline">/ ЗП Дашборд</span>
+      </div>
+
+      <!-- Источник данных -->
+      <div class="flex items-center gap-1.5">
+        <span :class="dataSource === 'gsheets' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-slate-100 text-slate-600 border-slate-300'"
+              class="text-xs border rounded-full px-2.5 py-0.5 font-medium"
+              x-text="dataSource === 'gsheets' ? 'Google Sheets' : 'Локальный Excel'"></span>
+      </div>
+
+      <div class="w-px h-5 bg-slate-200 hidden sm:block"></div>
+
+      <!-- Период ОТ / ПО -->
+      <div class="flex items-center gap-2">
+        <label class="text-xs text-slate-500 font-medium">С:</label>
+        <input type="date" x-model="dateFrom" @change="onDateChange()"
+               class="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-36">
+        <label class="text-xs text-slate-500 font-medium">По:</label>
+        <input type="date" x-model="dateTo" @change="onDateChange()"
+               class="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-36">
+      </div>
+
+      <!-- Быстрый выбор -->
+      <div class="flex items-center gap-1 flex-wrap">
+        <template x-for="q in quickBtns" :key="q.id">
+          <button @click="setQuick(q.id)"
+                  :class="quickActive === q.id
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'"
+                  class="qbtn" x-text="q.label"></button>
+        </template>
+      </div>
+
+      <!-- Кнопка обновления данных -->
+      <button @click="refreshData()"
+              :disabled="refreshing"
+              :class="refreshing ? 'opacity-60 cursor-not-allowed' : 'hover:bg-green-100'"
+              class="flex items-center gap-1.5 text-sm bg-green-50 text-green-800 border border-green-300 rounded-lg px-3 py-1.5 font-medium transition"
+              title="Загрузить свежие данные из Google Sheets / Excel">
+        <svg :class="refreshing ? 'animate-spin' : ''" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span x-text="refreshing ? 'Обновляю...' : 'Обновить'"></span>
+      </button>
+
+      <!-- Перенос заказов -->
+      <button @click="openTransfer()"
+              class="flex items-center gap-1.5 text-sm bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 rounded-lg px-3 py-1.5 font-medium transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+        </svg>
+        Перенести заказы
+      </button>
+
+      <!-- Статус загрузки -->
+      <div class="flex items-center gap-2 text-xs text-slate-500">
+        <template x-if="loading">
+          <span class="flex items-center gap-1 text-blue-500">
+            <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
+              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" class="opacity-75"/>
+            </svg>
+            Загрузка...
+          </span>
+        </template>
+        <template x-if="!loading && lastUpdated">
+          <span x-text="lastUpdated" class="text-slate-400"></span>
+        </template>
+        <template x-if="errorMsg">
+          <span class="text-red-500 font-semibold max-w-48 truncate" x-text="'⚠ ' + errorMsg"></span>
+        </template>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-5">
+    <template x-if="data && !errorMsg">
+      <div class="fade-in">
+
+        <!-- Плашка периода -->
+        <div class="flex flex-wrap gap-2 items-center mb-4 text-sm">
+          <span class="text-slate-500">Период:</span>
+          <span class="font-semibold text-slate-800" x-text="fmtD(dateFrom) + ' — ' + fmtD(dateTo)"></span>
+          <span class="text-slate-300">·</span>
+          <span class="text-slate-500 text-xs">
+            Прочитано листов: <strong x-text="(data.sheets_used||[]).length"></strong>
+            <span class="text-slate-400" x-text="'(' + (data.sheets_used||[]).join(', ') + ')'"></span>
+          </span>
+        </div>
+
+        <!-- Сводные карточки (всегда видны) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+          <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
+            <div class="text-2xl font-bold text-slate-800" x-text="data.total_orders"></div>
+            <div class="text-xs text-slate-500 mt-0.5">Заказов всего</div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
+            <div class="text-2xl font-bold text-green-700" x-text="totalDone"></div>
+            <div class="text-xs text-slate-500 mt-0.5">Завершено в периоде</div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
+            <div class="text-2xl font-bold text-blue-700" x-text="fmt(totalCalSalary)"></div>
+            <div class="text-xs text-slate-500 mt-0.5">ЗП каллиграфов</div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
+            <div class="text-2xl font-bold text-teal-700" x-text="fmt(totalMgrSalary)"></div>
+            <div class="text-xs text-slate-500 mt-0.5">ЗП менеджеров</div>
+          </div>
+        </div>
+
+        <!-- Фильтр по роли -->
+        <div class="flex gap-2 mb-4">
+          <template x-for="rf in [{id:'all',l:'Все'},{id:'Каллиграф',l:'Каллиграфы'},{id:'Менеджер',l:'Менеджеры'}]" :key="rf.id">
+            <button @click="roleFilter=rf.id"
+                    :class="roleFilter===rf.id
+                      ? (rf.id==='Менеджер' ? 'bg-teal-600 text-white' : 'bg-blue-600 text-white')
+                      : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'"
+                    class="text-sm rounded-lg px-4 py-1.5 font-medium border transition"
+                    x-text="rf.l"></button>
+          </template>
+        </div>
+
+        <!-- Карточки сотрудников -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <template x-for="emp in filteredEmployees" :key="emp.name">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden emp-card fade-in">
+
+              <!-- ── Шапка карточки — кликабельна для раскрытия ЗП ── -->
+              <div :class="emp.role === 'Менеджер' ? 'gradient-mgr' : 'gradient-cal'"
+                   class="px-5 py-4 text-white"
+                   @click="toggleReveal(emp.name)">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <div class="font-bold text-lg leading-tight" x-text="emp.name"></div>
+                    <div class="text-sm opacity-80 mt-0.5 flex items-center gap-2">
+                      <span x-text="emp.role"></span>
+                      <template x-if="emp.role === 'Каллиграф' && emp.coefficient !== 1">
+                        <span class="bg-white/20 text-xs rounded px-1.5 py-0.5" x-text="'×' + emp.coefficient"></span>
+                      </template>
+                    </div>
+                    <div class="text-xs opacity-60 mt-1"
+                         x-text="emp.orders_count + ' заказов с начислениями · ' + emp.orders_done + ' завершено'"></div>
+                  </div>
+
+                  <div class="text-right select-none">
+                    <!-- Зарплата: скрыта до нажатия -->
+                    <template x-if="!isRevealed(emp.name)">
+                      <div class="flex flex-col items-end gap-1">
+                        <div class="text-xl font-black opacity-40 tracking-widest">● ● ●</div>
+                        <div class="text-xs opacity-60 flex items-center gap-1">
+                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                          </svg>
+                          Нажми для просмотра
+                        </div>
+                      </div>
+                    </template>
+                    <template x-if="isRevealed(emp.name)">
+                      <div>
+                        <div class="text-2xl font-black" x-text="fmt(emp.total)"></div>
+                        <div class="text-xs opacity-70 mt-0.5">за период</div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── Тело: разворачивается после нажатия ── -->
+              <div x-show="isRevealed(emp.name)" x-transition class="px-5 py-4">
+
+                <!-- Прогресс-бары компонентов -->
+                <template x-if="emp.total > 0">
+                  <div class="space-y-2 mb-4">
+                    <template x-for="[k, v] in Object.entries(emp.breakdown)" :key="k">
+                      <div>
+                        <div class="flex justify-between text-xs text-slate-600 mb-1">
+                          <span x-text="labelFor(k)"></span>
+                          <span class="font-semibold" x-text="fmt(v)"></span>
+                        </div>
+                        <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div class="h-full rounded-full bar-fill" :class="colorFor(k)"
+                               :style="'width:' + Math.round(v / emp.total * 100) + '%'"></div>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <template x-if="emp.total === 0">
+                  <p class="text-sm text-slate-400 italic mb-4">Нет начислений за выбранный период</p>
+                </template>
+
+                <!-- Детализация заказов -->
+                <button @click.stop="toggleDetail(emp.name)"
+                        class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition select-none">
+                  <span x-text="openDetail === emp.name
+                    ? '▲ Скрыть детализацию'
+                    : '▼ Детализация (' + emp.orders_detail.length + ' заказов)'"></span>
+                </button>
+
+                <div x-show="openDetail === emp.name" x-transition class="mt-3 overflow-x-auto rounded-lg border border-slate-100">
+                  <table class="w-full text-xs">
+                    <thead>
+                      <tr class="bg-slate-50 text-slate-500">
+                        <th class="text-left p-2 font-medium">Клиент</th>
+                        <th class="p-2 font-medium">Тариф</th>
+                        <th class="p-2 font-medium">Поступ.</th>
+                        <th class="p-2 font-medium">Этапы в периоде</th>
+                        <th class="p-2 font-medium">Завершён</th>
+                        <th class="p-2 font-medium">Лист</th>
+                        <th class="text-right p-2 font-medium">Заработок</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="(od, idx) in emp.orders_detail" :key="idx">
+                        <tr class="detail-row border-b border-slate-100 last:border-0">
+                          <td class="p-2 text-slate-700 max-w-[140px] truncate" x-text="od.клиент || '—'"></td>
+                          <td class="p-2 text-center">
+                            <span :class="tagClass(od.тариф)" class="tag" x-text="od.тариф || '—'"></span>
+                          </td>
+                          <td class="p-2 text-center text-slate-500" x-text="od.поступление || '—'"></td>
+                          <td class="p-2 text-center">
+                            <span class="flex flex-wrap gap-0.5 justify-center">
+                              <template x-if="od.breakdown.варианты">
+                                <span class="bg-blue-100 text-blue-700 tag" x-text="'В ' + od.breakdown.варианты + '₽'"></span>
+                              </template>
+                              <template x-if="od.breakdown.правки">
+                                <span class="bg-orange-100 text-orange-700 tag" x-text="'П ' + od.breakdown.правки + '₽'"></span>
+                              </template>
+                              <template x-if="od.breakdown.обучение">
+                                <span class="bg-purple-100 text-purple-700 tag" x-text="'О ' + od.breakdown.обучение + '₽'"></span>
+                              </template>
+                              <template x-if="od.breakdown.тарифный_бонус || od.breakdown.бонус_без_правок || od.breakdown.бонус_за_заказ">
+                                <span class="bg-green-100 text-green-700 tag">+бонус</span>
+                              </template>
+                            </span>
+                          </td>
+                          <td class="p-2 text-center text-xs"
+                              :class="od.завершение ? 'text-green-600 font-medium' : 'text-slate-400'"
+                              x-text="od.завершение || 'в работе'"></td>
+                          <td class="p-2 text-center text-slate-400 text-xs" x-text="od.лист || ''"></td>
+                          <td class="p-2 text-right font-semibold text-slate-800" x-text="fmt(od.заработок)"></td>
+                        </tr>
+                      </template>
+                      <template x-if="!emp.orders_detail.length">
+                        <tr><td colspan="7" class="p-3 text-center text-slate-400 italic">Нет данных</td></tr>
+                      </template>
+                    </tbody>
+                    <tfoot>
+                      <tr class="bg-slate-50 font-semibold text-slate-700">
+                        <td colspan="6" class="p-2 text-right">Итого за период:</td>
+                        <td class="p-2 text-right" x-text="fmt(emp.total)"></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Легенда ставок -->
+        <details class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <summary class="px-5 py-3 cursor-pointer text-sm font-medium text-slate-700 hover:bg-slate-50 select-none">
+            Ставки мотивации
+          </summary>
+          <div class="px-5 pb-4 overflow-x-auto">
+            <table class="w-full text-xs mt-2">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500">
+                  <th class="text-left p-2 font-medium">Тариф</th>
+                  <th class="text-right p-2 font-medium">Варианты</th>
+                  <th class="text-right p-2 font-medium">Обучение</th>
+                  <th class="text-right p-2 font-medium">Бонус без правок</th>
+                  <th class="text-right p-2 font-medium">Тарифный бонус</th>
+                  <th class="text-right p-2 font-medium">Итог без правок</th>
+                  <th class="text-right p-2 font-medium">1 правка</th>
+                  <th class="text-right p-2 font-medium">Бонус мен-ра</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="r in rates" :key="r.t">
+                  <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                    <td class="p-2"><span :class="tagClass(r.t)" class="tag" x-text="r.t"></span></td>
+                    <td class="p-2 text-right" x-text="r.v + ' ₽'"></td>
+                    <td class="p-2 text-right" x-text="r.o + ' ₽'"></td>
+                    <td class="p-2 text-right" x-text="r.b + ' ₽'"></td>
+                    <td class="p-2 text-right" x-text="r.tb + ' ₽'"></td>
+                    <td class="p-2 text-right font-semibold" x-text="(r.v+r.o+r.b+r.tb) + ' ₽'"></td>
+                    <td class="p-2 text-right" x-text="r.p + ' ₽'"></td>
+                    <td class="p-2 text-right text-teal-700" x-text="r.m + ' ₽'"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+            <p class="text-xs text-slate-400 mt-2 italic">
+              Тарифный бонус — при завершении заказа (всегда, если > 0). Бонус без правок — при завершении И 0 правок по всему заказу. Менеджер — бонус за каждое завершение в периоде.
+            </p>
+          </div>
+        </details>
+      </div>
+    </template>
+
+    <!-- Ошибка -->
+    <template x-if="errorMsg && !loading">
+      <div class="text-center py-16 text-slate-500">
+        <div class="text-4xl mb-3">⚠️</div>
+        <div class="font-semibold text-red-600 mb-2" x-text="errorMsg"></div>
+        <p class="text-sm">Файл: <code class="bg-slate-100 px-1 rounded">SignaturePro_Заказы_NEW.xlsx</code></p>
+        <p class="text-sm mt-1">Или настрой Google Sheets в <code class="bg-slate-100 px-1 rounded">config.py</code></p>
+      </div>
+    </template>
+  </main>
+
+  <!-- ═══════════════════════════════════════════ МОДАЛ ПЕРЕНОСА ══ -->
+  <div x-show="showTransfer" x-cloak
+       class="fixed inset-0 z-50 modal-bg bg-black/40 flex items-center justify-center p-4"
+       @click.self="showTransfer=false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md fade-in" @click.stop>
+      <div class="px-6 pt-5 pb-4 border-b border-slate-100">
+        <h3 class="font-bold text-lg text-slate-800">Перенос незавершённых заказов</h3>
+        <p class="text-sm text-slate-500 mt-1">
+          Заказы без даты завершения переедут на новый лист. Все даты этапов сохраняются — 
+          ЗП по-прежнему считается по всем листам.
+        </p>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+
+        <div>
+          <label class="text-sm font-medium text-slate-700 mb-1.5 block">Из листа:</label>
+          <select x-model="transferFrom"
+                  class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+            <option value="">— выбери лист —</option>
+            <template x-for="s in sheets" :key="s">
+              <option :value="s" x-text="s.replace('_', ' ')"></option>
+            </template>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-sm font-medium text-slate-700 mb-1.5 block">В лист (новый или существующий):</label>
+          <input x-model="transferTo" placeholder="Май_2026"
+                 class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <p class="text-xs text-slate-400 mt-1">Если листа нет — создастся автоматически</p>
+        </div>
+
+        <div class="flex gap-2 flex-wrap">
+          <span class="text-xs text-slate-500 self-center">Быстро:</span>
+          <template x-for="s in nextSheetSuggestions" :key="s">
+            <button @click="transferTo = s"
+                    :class="transferTo === s ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-50 text-slate-600 border-slate-300'"
+                    class="text-xs px-2.5 py-1 rounded-lg border transition" x-text="s.replace('_', ' ')"></button>
+          </template>
+        </div>
+
+        <template x-if="transferResult">
+          <div :class="transferResult.ok ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'"
+               class="rounded-xl border px-4 py-3 text-sm" x-text="transferResult.msg"></div>
+        </template>
+      </div>
+      <div class="px-6 pb-5 flex gap-3">
+        <button @click="showTransfer=false; transferResult=null"
+                class="flex-1 border border-slate-300 text-slate-700 rounded-xl py-2.5 text-sm font-medium hover:bg-slate-50 transition">
+          Закрыть
+        </button>
+        <button @click="doTransfer()"
+                :disabled="transferring || !transferFrom || !transferTo"
+                :class="transferring || !transferFrom || !transferTo
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  : 'bg-amber-500 hover:bg-amber-600 text-white'"
+                class="flex-1 rounded-xl py-2.5 text-sm font-semibold transition flex items-center justify-center gap-2">
+          <template x-if="transferring">
+            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
+              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          </template>
+          <span x-text="transferring ? 'Переносим...' : 'Перенести'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ JS ══ -->
+  <script>
+    function dashboard() {
+      return {
+        dateFrom:    "",
+        dateTo:      "",
+        quickActive: "month",
+        data:        null,
+        loading:     false,
+        errorMsg:    "",
+        lastUpdated: "",
+        roleFilter:  "all",
+        openDetail:  null,
+        sheets:      [],
+        dataSource:  "excel",
+
+        // ЗП раскрывается по клику — объект {имя: true/false}
+        revealed: {},
+
+        refreshing: false,
+
+        // Перенос
+        showTransfer:   false,
+        transferFrom:   "",
+        transferTo:     "",
+        transferring:   false,
+        transferResult: null,
+
+        quickBtns: [
+          { id: "today",     label: "Сегодня" },
+          { id: "week",      label: "Эта неделя" },
+          { id: "month",     label: "Этот месяц" },
+          { id: "prevmonth", label: "Прошлый мес." },
+        ],
+
+        rates: [
+          {t:"E",      v:150, o:200, b:100, tb:  0, p:75, m:200},
+          {t:"ST",     v:150, o:200, b:100, tb:  0, p:75, m:200},
+          {t:"E_FAST", v:150, o:200, b:150, tb:300, p:75, m:200},
+          {t:"OPTNEW", v:500, o:200, b:200, tb:  0, p:75, m:300},
+          {t:"PRNEW",  v:500, o:200, b:250, tb:300, p:75, m:300},
+        ],
+
+        async init() {
+          this.setQuick("month");
+          await this.loadMeta();
+          await this.fetchData();
+        },
+
+        async loadMeta() {
+          try {
+            const r = await fetch("/api/meta");
+            const d = await r.json();
+            this.sheets = d.sheets || [];
+            this.dataSource = d.source || "excel";
+          } catch(e) { console.error(e); }
+        },
+
+        onDateChange() {
+          this.quickActive = "";
+          this.fetchData();
+        },
+
+        async refreshData() {
+          this.refreshing = true;
+          try {
+            await fetch("/api/refresh", { method: "POST" });
+            await this.fetchData();
+          } catch(e) {
+            this.errorMsg = "Ошибка обновления: " + e.message;
+          } finally {
+            this.refreshing = false;
+          }
+        },
+
+        async fetchData() {
+          if (!this.dateFrom || !this.dateTo) return;
+          this.loading  = true;
+          this.errorMsg = "";
+          try {
+            const r = await fetch(`/api/salary?from=${this.dateFrom}&to=${this.dateTo}`);
+            const d = await r.json();
+            if (d.error) { this.errorMsg = d.error; this.data = null; }
+            else { this.data = d; }
+            this.lastUpdated = new Date().toLocaleTimeString("ru-RU", {hour:"2-digit", minute:"2-digit"});
+          } catch(e) {
+            this.errorMsg = "Нет соединения с сервером: " + e.message;
+            this.data = null;
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        setQuick(mode) {
+          this.quickActive = mode;
+          const now = new Date();
+          const iso = d => {
+            const y = d.getFullYear();
+            const m = String(d.getMonth()+1).padStart(2,"0");
+            const day = String(d.getDate()).padStart(2,"0");
+            return `${y}-${m}-${day}`;
+          };
+          const today = iso(now);
+          if (mode === "today") {
+            this.dateFrom = today; this.dateTo = today;
+          } else if (mode === "week") {
+            const mon = new Date(now);
+            mon.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay()-1));
+            this.dateFrom = iso(mon); this.dateTo = today;
+          } else if (mode === "month") {
+            this.dateFrom = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-01`;
+            this.dateTo = today;
+          } else if (mode === "prevmonth") {
+            const pm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+            const last = new Date(now.getFullYear(), now.getMonth(), 0);
+            this.dateFrom = iso(pm); this.dateTo = iso(last);
+          }
+          this.fetchData();
+        },
+
+        // Формат даты: DD.MM.YYYY
+        fmtD(s) {
+          if (!s) return "";
+          const [y, m, d] = s.split("-");
+          return `${d}.${m}.${y}`;
+        },
+
+        fmt(val) {
+          if (!val && val !== 0) return "0 ₽";
+          return Math.round(val).toLocaleString("ru-RU") + " ₽";
+        },
+
+        // ── Раскрытие ЗП по клику ──────────────────────────────────────────
+        toggleReveal(name) {
+          this.revealed = { ...this.revealed, [name]: !this.revealed[name] };
+          // Если скрываем — тоже скрываем детализацию
+          if (!this.revealed[name] && this.openDetail === name) {
+            this.openDetail = null;
+          }
+        },
+        isRevealed(name) { return !!this.revealed[name]; },
+
+        toggleDetail(name) {
+          this.openDetail = this.openDetail === name ? null : name;
+        },
+
+        get employees() {
+          if (!this.data?.employees) return [];
+          return Object.values(this.data.employees).sort((a,b) => b.total - a.total);
+        },
+        get filteredEmployees() {
+          return this.roleFilter === "all"
+            ? this.employees
+            : this.employees.filter(e => e.role === this.roleFilter);
+        },
+        get totalDone() {
+          return Object.values(this.data?.employees||{})
+            .filter(e => e.role === "Каллиграф")
+            .reduce((s,e) => s + (e.orders_done||0), 0);
+        },
+        get totalCalSalary() {
+          return Object.values(this.data?.employees||{})
+            .filter(e => e.role === "Каллиграф").reduce((s,e) => s+e.total, 0);
+        },
+        get totalMgrSalary() {
+          return Object.values(this.data?.employees||{})
+            .filter(e => e.role === "Менеджер").reduce((s,e) => s+e.total, 0);
+        },
+
+        labelFor(k) {
+          return {варианты:"Варианты", правки:"Правки", обучение:"Обучение",
+                  тарифный_бонус:"Тарифный бонус", бонус_без_правок:"Бонус без правок",
+                  бонус_за_заказ:"Бонус за заказ"}[k] || k;
+        },
+        colorFor(k) {
+          return {варианты:"bg-blue-400", правки:"bg-orange-400", обучение:"bg-purple-400",
+                  тарифный_бонус:"bg-yellow-400", бонус_без_правок:"bg-green-400",
+                  бонус_за_заказ:"bg-teal-400"}[k] || "bg-slate-400";
+        },
+        tagClass(t) {
+          return {E:"tag-E", ST:"tag-ST", E_FAST:"tag-EFAST",
+                  OPTNEW:"tag-OPTNEW", PRNEW:"tag-PRNEW"}[t] || "tag-other";
+        },
+
+        // ── Перенос ─────────────────────────────────────────────────────────
+        openTransfer() {
+          this.transferResult = null;
+          if (this.sheets.length) this.transferFrom = this.sheets[this.sheets.length-1];
+          this.showTransfer = true;
+        },
+        get nextSheetSuggestions() {
+          const RU = ["Январь","Февраль","Март","Апрель","Май","Июнь",
+                      "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+          const last = this.sheets[this.sheets.length-1] || "";
+          const m = last.match(/(\d{4})/);
+          if (!m) return [];
+          const year = parseInt(m[1]);
+          let curMonth = -1;
+          RU.forEach((n,i) => { if (last.toLowerCase().includes(n.toLowerCase().slice(0,3))) curMonth = i; });
+          if (curMonth < 0) return [];
+          const n1 = curMonth === 11 ? `${RU[0]}_${year+1}` : `${RU[curMonth+1]}_${year}`;
+          const n2 = curMonth >= 10  ? `${RU[(curMonth+2)%12]}_${year+1}` : `${RU[(curMonth+2)%12]}_${year}`;
+          return [n1, n2];
+        },
+        async doTransfer() {
+          if (!this.transferFrom || !this.transferTo) return;
+          this.transferring = true; this.transferResult = null;
+          try {
+            const r = await fetch("/api/transfer", {
+              method: "POST",
+              headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({from_sheet: this.transferFrom, to_sheet: this.transferTo}),
+            });
+            const d = await r.json();
+            this.transferResult = d.error
+              ? { ok:false, msg: "Ошибка: " + d.error }
+              : { ok:true,  msg: d.message };
+            if (!d.error) { await this.loadMeta(); await this.fetchData(); }
+          } catch(e) {
+            this.transferResult = { ok:false, msg: "Ошибка соединения: " + e.message };
+          } finally { this.transferring = false; }
+        },
+      };
+    }
+  </script>
+</body>
+</html>
