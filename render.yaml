@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: signaturepro-dashboard
+    runtime: python
+    buildCommand: pip install -r requirements_deploy.txt
+    startCommand: python dashboard.py
+    envVars:
+      - key: GOOGLE_CREDENTIALS_B64
+        sync: false   # вставишь вручную в Render Dashboard
+      - key: GOOGLE_SHEETS_URL
+        sync: false
