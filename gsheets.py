@@ -45,7 +45,7 @@ def _get_client(credentials_file):
     return _client
 
 
-def _with_retry(fn, max_retries=4):
+def _with_retry(fn, max_retries=6):
     """Повторяет запрос при ошибке лимита API (429 Too Many Requests)."""
     last_err = None
     for attempt in range(max_retries):
@@ -55,7 +55,9 @@ def _with_retry(fn, max_retries=4):
             msg = str(e)
             is_rate_limit = "429" in msg or "RESOURCE_EXHAUSTED" in msg or "quota" in msg.lower()
             if is_rate_limit:
-                wait = 5 * (2 ** attempt)  # 5, 10, 20, 40 сек
+                # Начинаем с 15с (write-лимит = 60с), экспоненциально растём
+                wait = 15 * (2 ** attempt)  # 15, 30, 60, 120, 240, 480 сек
+                wait = min(wait, 120)  # не ждём больше 2 минут за раз
                 print(f"Google Sheets API: лимит запросов, жду {wait}с (попытка {attempt+1}/{max_retries})...")
                 time.sleep(wait)
                 last_err = e
@@ -226,13 +228,16 @@ def transfer_orders(spreadsheet_url, credentials_file, from_sheet_name, to_sheet
     if not rows_to_move:
         return 0
 
-    # Добавляем в целевой лист
-    for row in rows_to_move:
-        padded = (row + [""] * 19)[:19]
-        _with_retry(lambda r=padded: ws_to.append_row(r, value_input_option="USER_ENTERED"))
+    # Добавляем в целевой лист одним батчевым запросом
+    padded_rows = [(row + [""] * 19)[:19] for row in rows_to_move]
+    _with_retry(lambda: ws_to.append_rows(padded_rows, value_input_option="USER_ENTERED"))
+
+    # Небольшая пауза между write-операциями, чтобы не переполнить квоту
+    time.sleep(2)
 
     # Перезаписываем исходный лист (только незавершённые уходят)
     _with_retry(lambda: ws_from.clear())
+    time.sleep(1)
     if rows_to_keep:
         _with_retry(lambda: ws_from.update("A1", rows_to_keep, value_input_option="USER_ENTERED"))
 
