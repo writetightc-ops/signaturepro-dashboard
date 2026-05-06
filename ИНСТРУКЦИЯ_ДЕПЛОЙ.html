@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignaturePro — Инструкция по публикации</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.6; }
+    .hero { background: linear-gradient(135deg, #1e3a5f, #2563eb); color: white; padding: 40px 24px; text-align: center; }
+    .hero h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
+    .hero p  { opacity: .8; font-size: 1rem; }
+    .container { max-width: 820px; margin: 0 auto; padding: 32px 20px 60px; }
+    .step { background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 20px; overflow: hidden; }
+    .step-header { display: flex; align-items: center; gap: 16px; padding: 20px 24px; cursor: pointer; user-select: none; }
+    .step-header:hover { background: #f8faff; }
+    .step-num { width: 36px; height: 36px; border-radius: 50%; background: #2563eb; color: white; font-weight: 800; font-size: .95rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-num.done { background: #16a34a; }
+    .step-num.warn { background: #f59e0b; }
+    .step-title { font-weight: 700; font-size: 1.05rem; flex: 1; }
+    .step-badge { font-size: .7rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+    .badge-easy { background: #dcfce7; color: #15803d; }
+    .badge-medium { background: #fef9c3; color: #854d0e; }
+    .badge-done { background: #dbeafe; color: #1d4ed8; }
+    .step-arrow { font-size: .8rem; color: #94a3b8; transition: transform .2s; }
+    .step-body { display: none; padding: 0 24px 24px; border-top: 1px solid #f1f5f9; }
+    .step-body.open { display: block; }
+    .step-body p { margin: 12px 0 8px; color: #475569; }
+    ol, ul { padding-left: 22px; margin: 8px 0 12px; }
+    li { margin: 6px 0; color: #475569; }
+    li strong { color: #1e293b; }
+    .cmd { background: #0f172a; color: #7dd3fc; padding: 12px 16px; border-radius: 10px; font-family: monospace; font-size: .88rem; margin: 10px 0; white-space: pre-wrap; word-break: break-all; }
+    .copy-block { position: relative; }
+    .copy-btn { position: absolute; top: 8px; right: 8px; background: #1e40af; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: .72rem; cursor: pointer; transition: background .15s; }
+    .copy-btn:hover { background: #1d4ed8; }
+    .copy-btn.copied { background: #16a34a; }
+    .note { background: #eff6ff; border-left: 3px solid #2563eb; padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 10px 0; font-size: .9rem; color: #1e40af; }
+    .warn-box { background: #fff7ed; border-left: 3px solid #f59e0b; padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 10px 0; font-size: .9rem; color: #92400e; }
+    .success-box { background: #f0fdf4; border-left: 3px solid #16a34a; padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 10px 0; font-size: .9rem; color: #166534; }
+    .file-box { background: #f8faff; border: 1px solid #e0e7ff; border-radius: 8px; padding: 10px 14px; margin: 8px 0; font-size: .88rem; }
+    .file-box code { background: #e0e7ff; color: #3730a3; padding: 1px 6px; border-radius: 4px; font-size: .85rem; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: .9rem; }
+    th { background: #f1f5f9; padding: 8px 12px; text-align: left; font-weight: 600; color: #475569; }
+    td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    td code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: .85rem; }
+    a { color: #2563eb; }
+    .link-btn { display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: white; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: .88rem; margin: 6px 4px 6px 0; transition: background .15s; }
+    .link-btn:hover { background: #1d4ed8; }
+    .link-btn.green { background: #16a34a; }
+    .link-btn.green:hover { background: #15803d; }
+    .link-btn.gray { background: #475569; }
+    .link-btn.gray:hover { background: #334155; }
+    .final { background: linear-gradient(135deg, #064e3b, #059669); color: white; border-radius: 16px; padding: 28px 24px; text-align: center; margin-top: 24px; }
+    .final h2 { font-size: 1.4rem; margin-bottom: 8px; }
+    .final p { opacity: .85; font-size: .95rem; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>SignaturePro — Публикация дашборда</h1>
+  <p>Пошаговая инструкция: от кода до постоянной публичной ссылки</p>
+</div>
+
+<div class="container">
+
+  <p style="color:#64748b; margin-bottom:20px; font-size:.9rem;">
+    Нажимай на каждый шаг, чтобы развернуть инструкцию. Шагов всего 4.
+  </p>
+
+  <!-- ═══ ШАГ 1 ═══ -->
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-num">1</div>
+      <div class="step-title">Установи GitHub Desktop</div>
+      <span class="step-badge badge-easy">5 мин · легко</span>
+      <span class="step-arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>GitHub Desktop — это программа с красивым интерфейсом для загрузки кода в облако. Командная строка не нужна.</p>
+
+      <a href="https://desktop.github.com" target="_blank" class="link-btn">Скачать GitHub Desktop</a>
+
+      <ol>
+        <li>Скачай и установи GitHub Desktop</li>
+        <li>При запуске нажми <strong>«Sign in to GitHub.com»</strong></li>
+        <li>Создай аккаунт или войди (можно через Google)</li>
+        <li>После входа увидишь главный экран — готово</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ═══ ШАГ 2 ═══ -->
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-num">2</div>
+      <div class="step-title">Загрузи код на GitHub</div>
+      <span class="step-badge badge-easy">3 мин · легко</span>
+      <span class="step-arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>Загружаем папку с проектом на GitHub. Файлы с данными и ключами <strong>не попадут</strong> в облако (они в .gitignore).</p>
+
+      <ol>
+        <li>В GitHub Desktop: <strong>File → Add local repository</strong></li>
+        <li>В поле «Local path» укажи папку:<br>
+          <div class="cmd">d:\Подписи курсор</div>
+        </li>
+        <li>Если появится сообщение «This directory does not appear to be a Git repository» — нажми <strong>«create a repository»</strong></li>
+        <li>В поле «Name» напиши: <code>signaturepro-dashboard</code></li>
+        <li>Нажми <strong>«Create repository»</strong></li>
+        <li>Нажми синюю кнопку <strong>«Publish repository»</strong> вверху</li>
+        <li>Убери галочку <strong>«Keep this code private»</strong></li>
+        <li>Нажми <strong>«Publish repository»</strong></li>
+      </ol>
+
+      <div class="success-box">
+        Репозиторий появится на github.com — в нём будут только файлы кода (.py, .html), без Excel и credentials.json
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ШАГ 3 ═══ -->
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-num">3</div>
+      <div class="step-title">Создай сервис на Render</div>
+      <span class="step-badge badge-medium">10 мин</span>
+      <span class="step-arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p><strong>Render</strong> — бесплатный хостинг для Python-приложений. Подключается к GitHub и запускает твой код автоматически.</p>
+
+      <a href="https://render.com" target="_blank" class="link-btn">Открыть render.com</a>
+
+      <ol>
+        <li>Нажми <strong>«Get Started for Free»</strong></li>
+        <li>Войди через <strong>«GitHub»</strong> — это важно, чтобы Render видел твои репозитории</li>
+        <li>После входа нажми <strong>«New +»</strong> → <strong>«Web Service»</strong></li>
+        <li>Выбери репозиторий <strong>signaturepro-dashboard</strong> → нажми <strong>«Connect»</strong></li>
+      </ol>
+
+      <p>На странице настройки сервиса проверь:</p>
+      <table>
+        <tr><th>Поле</th><th>Значение</th></tr>
+        <tr><td>Name</td><td><code>signaturepro-dashboard</code></td></tr>
+        <tr><td>Runtime</td><td><code>Python 3</code></td></tr>
+        <tr><td>Build Command</td><td><code>pip install -r requirements.txt</code></td></tr>
+        <tr><td>Start Command</td><td><code>gunicorn --workers 1 --timeout 120 dashboard:app</code></td></tr>
+        <tr><td>Instance Type</td><td><code>Free</code></td></tr>
+      </table>
+
+      <div class="note">
+        Если Start Command уже заполнен автоматически из Procfile — всё правильно, не меняй.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ШАГ 4 ═══ -->
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-num">4</div>
+      <div class="step-title">Добавь переменные окружения и запусти</div>
+      <span class="step-badge badge-medium">5 мин</span>
+      <span class="step-arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>Перед тем как нажать «Create», прокрути вниз до раздела <strong>«Environment Variables»</strong> и добавь две переменные:</p>
+
+      <p><strong>Переменная 1 — URL Google Таблицы:</strong></p>
+      <table>
+        <tr><th>Key</th><th>Value</th></tr>
+        <tr>
+          <td><code>GOOGLE_SHEETS_URL</code></td>
+          <td>Скопируй URL своей Google Таблицы из браузера</td>
+        </tr>
+      </table>
+
+      <p><strong>Переменная 2 — Ключ доступа к Google Sheets:</strong></p>
+      <table>
+        <tr><th>Key</th><th>Value</th></tr>
+        <tr>
+          <td><code>GOOGLE_CREDENTIALS_B64</code></td>
+          <td>Содержимое файла <code>RENDER_CREDENTIALS_B64.txt</code> из папки проекта</td>
+        </tr>
+      </table>
+
+      <div class="file-box">
+        Файл с ключом: <code>d:\Подписи курсор\RENDER_CREDENTIALS_B64.txt</code><br>
+        Открой его в блокноте (ПКМ → «Открыть с помощью» → Блокнот), выдели всё (Ctrl+A) и скопируй (Ctrl+C)
+      </div>
+
+      <div class="warn-box">
+        Файл <code>RENDER_CREDENTIALS_B64.txt</code> содержит секретный ключ — никому не отправляй его содержимое.
+        После настройки Render можно удалить этот файл с компьютера.
+      </div>
+
+      <ol>
+        <li>После добавления обеих переменных нажми <strong>«Create Web Service»</strong></li>
+        <li>Render начнёт сборку — займёт 2–4 минуты</li>
+        <li>Когда статус станет <strong style="color:#16a34a">«Live»</strong> — дашборд доступен!</li>
+      </ol>
+
+      <div class="success-box">
+        Ссылка появится вверху страницы Render — вида <strong>https://signaturepro-dashboard.onrender.com</strong><br>
+        Это и есть постоянный публичный адрес. Поделись им с командой.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ДОПОЛНИТЕЛЬНО ═══ -->
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <div class="step-num" style="background:#64748b">?</div>
+      <div class="step-title">Частые вопросы</div>
+      <span class="step-badge badge-done">FAQ</span>
+      <span class="step-arrow">▼</span>
+    </div>
+    <div class="step-body">
+
+      <p><strong>Как обновить код после изменений?</strong></p>
+      <p>В GitHub Desktop нажми <strong>«Commit to main»</strong> → <strong>«Push origin»</strong>.
+      Render автоматически подхватит изменения и перезапустит сервер.</p>
+
+      <p><strong>Что если Render «засыпает»?</strong></p>
+      <p>На бесплатном тарифе сервис засыпает после 15 мин бездействия.
+      Первый запрос будет ждать ~30 секунд (пробуждение). Это нормально.
+      Чтобы этого не было — нужен платный тариф ($7/мес).</p>
+
+      <p><strong>Как запускать локально (для офлайн работы)?</strong></p>
+      <div class="cmd">cd "d:\Подписи курсор"
+python dashboard.py</div>
+      <p>Открыть: <a href="http://localhost:5000">http://localhost:5000</a></p>
+
+      <p><strong>Как обновить данные в дашборде?</strong></p>
+      <p>Нажми зелёную кнопку <strong>«Обновить»</strong> в шапке дашборда.
+      Данные загрузятся из Google Sheets.</p>
+
+      <p><strong>Как перенести незавершённые заказы на новый месяц?</strong></p>
+      <p>Нажми кнопку <strong>«Перенести заказы»</strong> в шапке → выбери исходный лист → введи название нового (например <code>Май_2026</code>) → нажми «Перенести».</p>
+
+    </div>
+  </div>
+
+  <div class="final">
+    <h2>Готово! Дашборд доступен всей команде</h2>
+    <p>Постоянная ссылка на render.com — не нужно держать компьютер включённым.<br>
+    Данные всегда актуальны из Google Sheets.</p>
+  </div>
+
+</div>
+
+<script>
+  function toggle(header) {
+    const body = header.nextElementSibling;
+    const arrow = header.querySelector('.step-arrow');
+    const isOpen = body.classList.contains('open');
+    // Закрываем все
+    document.querySelectorAll('.step-body').forEach(b => b.classList.remove('open'));
+    document.querySelectorAll('.step-arrow').forEach(a => a.style.transform = '');
+    // Открываем текущий если был закрыт
+    if (!isOpen) {
+      body.classList.add('open');
+      arrow.style.transform = 'rotate(180deg)';
+    }
+  }
+  // Открываем первый шаг по умолчанию
+  document.querySelector('.step-header').click();
+</script>
+</body>
+</html>

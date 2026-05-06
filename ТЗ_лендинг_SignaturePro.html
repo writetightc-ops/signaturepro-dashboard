@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ТЗ для дизайнера — Новый лендинг SignaturePro</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f3; color: #1a1a1a; font-size: 15px; line-height: 1.6; }
+
+    /* ---- TOP HEADER ---- */
+    .doc-header { background: #1a1a1a; color: #fff; padding: 40px 60px; }
+    .doc-header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .doc-header p { color: #aaa; font-size: 14px; }
+    .doc-header .meta { display: flex; gap: 30px; margin-top: 20px; }
+    .doc-header .meta-item { display: flex; flex-direction: column; gap: 2px; }
+    .doc-header .meta-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; }
+    .doc-header .meta-value { font-size: 14px; color: #ddd; }
+
+    /* ---- INTRO ---- */
+    .intro { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 30px 60px; }
+    .intro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 16px; }
+    .intro-box { background: #f9f9f8; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; }
+    .intro-box h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 10px; }
+    .intro-box ul { list-style: none; }
+    .intro-box ul li { padding: 3px 0; font-size: 14px; color: #444; }
+    .intro-box ul li::before { content: "→ "; color: #999; }
+
+    /* ---- NAVIGATION ---- */
+    .toc { background: #fff; padding: 24px 60px; border-bottom: 2px solid #e5e5e5; position: sticky; top: 0; z-index: 50; }
+    .toc-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 10px; }
+    .toc-links { display: flex; flex-wrap: wrap; gap: 6px; }
+    .toc-links a { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: #f0f0ef; color: #555; text-decoration: none; border: 1px solid #e0e0de; transition: all .15s; }
+    .toc-links a:hover { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+    /* ---- SECTION ---- */
+    .section { background: #fff; margin: 20px 60px; border-radius: 12px; border: 1px solid #e5e5e5; overflow: hidden; }
+    .section-header { display: flex; align-items: center; gap: 16px; padding: 24px 30px; border-bottom: 1px solid #f0f0ef; background: #fafaf9; }
+    .section-num { width: 40px; height: 40px; background: #1a1a1a; color: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+    .section-title { font-size: 18px; font-weight: 700; }
+    .section-subtitle { font-size: 13px; color: #888; margin-top: 2px; }
+    .section-body { padding: 30px; }
+
+    /* ---- WIREFRAME ---- */
+    .wireframe { border: 2px dashed #d0d0ce; border-radius: 8px; background: #fafaf9; margin: 20px 0; overflow: hidden; }
+    .wireframe-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; padding: 8px 16px; background: #f0f0ef; border-bottom: 1px solid #e5e5e5; }
+    .wireframe-content { padding: 16px; }
+
+    /* Wireframe blocks */
+    .wf-hero { background: #2a2a2a; color: #fff; padding: 40px; border-radius: 6px; text-align: center; margin-bottom: 8px; }
+    .wf-hero h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .wf-hero p { font-size: 14px; color: #aaa; margin-bottom: 16px; }
+    .wf-btn { display: inline-block; background: #fff; color: #1a1a1a; font-size: 13px; font-weight: 600; padding: 10px 24px; border-radius: 4px; }
+    .wf-btn-outline { display: inline-block; border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 13px; padding: 10px 24px; border-radius: 4px; margin-left: 8px; }
+    .wf-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .wf-box { flex: 1; background: #f0f0ef; border-radius: 6px; padding: 16px; text-align: center; }
+    .wf-box-dark { flex: 1; background: #e8e8e8; border-radius: 6px; padding: 16px; text-align: center; }
+    .wf-box h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .wf-box p, .wf-box-dark p { font-size: 12px; color: #888; }
+    .wf-box-dark h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .wf-img { background: #e0e0de; height: 120px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; }
+    .wf-price-row { display: flex; gap: 8px; }
+    .wf-price-card { flex: 1; border: 2px solid #e0e0de; border-radius: 8px; padding: 20px; text-align: center; }
+    .wf-price-card.featured { border-color: #1a1a1a; background: #1a1a1a; color: #fff; }
+    .wf-price-card .price { font-size: 28px; font-weight: 700; margin: 8px 0; }
+    .wf-price-card .plan-name { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+    .wf-price-card.featured .plan-name { color: #aaa; }
+    .wf-price-card ul { list-style: none; text-align: left; margin-top: 12px; }
+    .wf-price-card ul li { font-size: 12px; padding: 4px 0; border-top: 1px solid #eee; color: #555; }
+    .wf-price-card.featured ul li { color: #ccc; border-top-color: #333; }
+    .wf-price-card ul li::before { content: "✓ "; color: #888; font-weight: bold; }
+    .wf-price-card.featured ul li::before { color: #aaa; }
+    .wf-step-row { display: flex; gap: 0; }
+    .wf-step { flex: 1; padding: 16px; border-right: 1px solid #e5e5e5; }
+    .wf-step:last-child { border-right: none; }
+    .wf-step-num { font-size: 28px; font-weight: 700; color: #e0e0de; margin-bottom: 8px; }
+    .wf-step h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .wf-step p { font-size: 12px; color: #888; }
+    .wf-testimonial-row { display: flex; gap: 8px; }
+    .wf-testimonial { flex: 1; background: #fafaf9; border: 1px solid #e5e5e5; border-radius: 6px; padding: 16px; }
+    .wf-testimonial .name { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+    .wf-testimonial .quote { font-size: 12px; color: #666; font-style: italic; }
+    .wf-logos { display: flex; gap: 12px; align-items: center; justify-content: center; padding: 16px; background: #fafaf9; border-radius: 6px; }
+    .wf-logo { background: #e0e0de; height: 30px; width: 80px; border-radius: 4px; }
+    .wf-audience-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .wf-aud-card { background: #f5f5f3; border: 1px solid #e5e5e5; border-radius: 6px; padding: 14px; text-align: center; }
+    .wf-aud-card .icon { font-size: 22px; margin-bottom: 6px; }
+    .wf-aud-card h4 { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+    .wf-aud-card p { font-size: 11px; color: #888; }
+    .wf-faq { }
+    .wf-faq-item { border-bottom: 1px solid #e5e5e5; padding: 14px 0; display: flex; justify-content: space-between; }
+    .wf-faq-item p { font-size: 13px; font-weight: 500; }
+    .wf-faq-item span { color: #999; font-size: 18px; }
+
+    /* ---- CONTENT BLOCKS ---- */
+    .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .content-box { border-radius: 8px; padding: 20px; }
+    .box-was { background: #fff5f5; border: 1px solid #fecaca; }
+    .box-now { background: #f0fdf4; border: 1px solid #86efac; }
+    .box-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 10px; }
+    .box-was .box-label { color: #dc2626; }
+    .box-now .box-label { color: #16a34a; }
+    .box-was blockquote { font-size: 14px; color: #555; font-style: italic; line-height: 1.5; }
+    .box-now blockquote { font-size: 14px; color: #333; font-style: italic; line-height: 1.5; }
+
+    .note { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+    .note strong { color: #92400e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+    .note p { font-size: 14px; color: #78350f; }
+
+    .info { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+    .info strong { color: #1e40af; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+    .info p { font-size: 14px; color: #1e3a8a; }
+
+    .copy-block { background: #f8f8f6; border-left: 3px solid #1a1a1a; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 12px 0; }
+    .copy-block .copy-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 6px; }
+    .copy-block .copy-text { font-size: 15px; font-weight: 600; color: #1a1a1a; line-height: 1.4; }
+    .copy-block .copy-sub { font-size: 13px; color: #555; margin-top: 6px; }
+
+    .spec-list { }
+    .spec-list li { padding: 8px 0; border-bottom: 1px solid #f0f0ef; font-size: 14px; color: #444; display: flex; gap: 10px; }
+    .spec-list li:last-child { border-bottom: none; }
+    .spec-list li::before { content: "—"; color: #ccc; flex-shrink: 0; }
+
+    .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-right: 4px; }
+    .tag-req { background: #fee2e2; color: #dc2626; }
+    .tag-opt { background: #dbeafe; color: #1d4ed8; }
+    .tag-copy { background: #d1fae5; color: #065f46; }
+
+    h2.block-title { font-size: 15px; font-weight: 700; color: #1a1a1a; margin: 20px 0 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #1a1a1a; padding-bottom: 6px; }
+    h3.sub-title { font-size: 14px; font-weight: 700; color: #333; margin: 16px 0 8px; }
+
+    .pricing-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+    .pricing-table th { background: #1a1a1a; color: #fff; padding: 10px 14px; text-align: left; }
+    .pricing-table td { padding: 10px 14px; border-bottom: 1px solid #f0f0ef; }
+    .pricing-table tr:nth-child(even) td { background: #fafaf9; }
+    .pricing-table .check { color: #16a34a; font-weight: bold; }
+    .pricing-table .cross { color: #dc2626; }
+    .pricing-table .price-cell { font-size: 18px; font-weight: 700; }
+
+    /* ---- FOOTER ---- */
+    .doc-footer { background: #1a1a1a; color: #666; text-align: center; padding: 30px; margin-top: 40px; font-size: 13px; }
+    .doc-footer span { color: #999; }
+
+    @media print {
+      .toc { position: static; }
+      .section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════ HEADER ════════════════════ -->
+<div class="doc-header">
+  <h1>ТЗ: Новый лендинг SignaturePro</h1>
+  <p>Техническое задание для веб-дизайнера. Отдельная посадочная страница для тестирования нового позиционирования.</p>
+  <div class="meta">
+    <div class="meta-item"><span class="meta-label">Проект</span><span class="meta-value">SignaturePro / Write Tight</span></div>
+    <div class="meta-item"><span class="meta-label">Тип</span><span class="meta-value">Отдельный лендинг (не главная)</span></div>
+    <div class="meta-item"><span class="meta-label">Цель</span><span class="meta-value">Трафик на новое позиционирование</span></div>
+    <div class="meta-item"><span class="meta-label">Язык</span><span class="meta-value">Английский (США)</span></div>
+    <div class="meta-item"><span class="meta-label">Оригинал</span><span class="meta-value">signatureprodesign.com</span></div>
+  </div>
+</div>
+
+<!-- ════════════════════ INTRO ════════════════════ -->
+<div class="intro">
+  <strong style="font-size:14px;">О документе</strong>
+  <p style="font-size:14px; color:#555; margin-top:6px;">Новая страница — это самостоятельный лендинг с обновлённым позиционированием. Структура не повторяет главный сайт, но сохраняет ключевые блоки. Цель — протестировать новые смыслы на платном трафике.</p>
+  <div class="intro-grid">
+    <div class="intro-box">
+      <h3>Что меняется в позиционировании</h3>
+      <ul>
+        <li>Уходим от «подписи, которой восхищаются» → инструмент для профессионала</li>
+        <li>Акцент на деловую аудиторию: менеджмент, предприниматели</li>
+        <li>Вводим концепт Stress Signature как уникальное УТП</li>
+        <li>Убираем язык скидок и инфобиза</li>
+        <li>Тариф «Премьер» — подпись под ваш почерк (анализ рукописного текста)</li>
+      </ul>
+    </div>
+    <div class="intro-box">
+      <h3>Тон коммуникации</h3>
+      <ul>
+        <li>Сдержанно и уверенно — без восторженности</li>
+        <li>Прагматично — через ситуации, а не через эмоции</li>
+        <li>Без «ограниченное предложение», таймеров, «успей»</li>
+        <li>Отзывы — фактические, не восторженные</li>
+        <li>Ориентир: «уверенный специалист», не инфобиз</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ TOC ════════════════════ -->
+<div class="toc">
+  <div class="toc-title">Блоки страницы</div>
+  <div class="toc-links">
+    <a href="#block-1">1. Главный экран</a>
+    <a href="#block-2">2. Регалии</a>
+    <a href="#block-3">3. Аудитория</a>
+    <a href="#block-4">4. Примеры работ</a>
+    <a href="#block-5">5. Продукт</a>
+    <a href="#block-6">6. Процесс</a>
+    <a href="#block-7">7. Тарифы</a>
+    <a href="#block-8">8. Тариф Премьер</a>
+    <a href="#block-9">9. Отзывы</a>
+    <a href="#block-10">10. FAQ</a>
+    <a href="#block-11">11. Подвал</a>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 1 — ГЛАВНЫЙ ЭКРАН
+══════════════════════════════════════════════ -->
+<div class="section" id="block-1">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <div>
+      <div class="section-title">Главный экран (Hero)</div>
+      <div class="section-subtitle">Первое, что видит пользователь. Должен ответить: "что это и для кого" за 5 секунд.</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="content-grid">
+      <div class="content-box box-was">
+        <div class="box-label">❌ Было (текущий сайт)</div>
+        <blockquote>«Express your personality with an exclusive signature crafted by pro calligraphers»<br><br>
+        Акцент: личность, эксклюзивность, самовыражение.</blockquote>
+      </div>
+      <div class="content-box box-now">
+        <div class="box-label">✅ Стало (новый лендинг)</div>
+        <blockquote>Акцент: профессиональный инструмент, соответствие уровню карьеры, функциональность.</blockquote>
+      </div>
+    </div>
+
+    <h2 class="block-title">Копирайтинг — главный экран</h2>
+
+    <div class="copy-block">
+      <div class="copy-label">Основной заголовок (H1)</div>
+      <div class="copy-text">You've outgrown your signature.</div>
+      <div class="copy-sub">Провокация через ситуацию, а не через оценку. Говорим: ты уже вырос, подпись должна соответствовать.</div>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Подзаголовок</div>
+      <div class="copy-text">A handcrafted signature designed to perform — in daily documents, high-stakes contracts, and everything in between.</div>
+      <div class="copy-sub">Показываем практичность. «Perform» — слово из бизнес-языка, не из языка красоты.</div>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Кнопка CTA (основная)</div>
+      <div class="copy-text">Get My Signature</div>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Кнопка CTA (вторичная)</div>
+      <div class="copy-text">See Examples →</div>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Под кнопками — социальное доказательство (мелкий текст)</div>
+      <div class="copy-text">20,500+ professionals trust their signature to us · Since 2017 · 100% handcrafted</div>
+    </div>
+
+    <h2 class="block-title">Визуальная схема</h2>
+    <div class="wireframe">
+      <div class="wireframe-label">Схема блока Hero</div>
+      <div class="wireframe-content">
+        <div class="wf-hero">
+          <p style="font-size:11px; color:#666; margin-bottom:16px; text-transform:uppercase; letter-spacing:2px;">SIGNATUREPRO</p>
+          <h2>You've outgrown your signature.</h2>
+          <p>A handcrafted signature designed to perform — in daily documents,<br>high-stakes contracts, and everything in between.</p>
+          <div style="margin-top:16px;">
+            <span class="wf-btn">Get My Signature</span>
+            <span class="wf-btn-outline">See Examples →</span>
+          </div>
+          <p style="font-size:11px; color:#555; margin-top:20px;">20,500+ professionals · Since 2017 · 100% handcrafted</p>
+        </div>
+        <div class="wf-img" style="height:80px;">▼ Анимация или фото: рука пишет подпись</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Фон — тёмный или нейтральный. Никаких ярких акцентных цветов. Никаких баннеров со скидками на герое. Визуал: процесс написания, рука с пером, готовая подпись — всё сдержанно, без украшений. Типографика крупная, без засечек или с засечками — на усмотрение, главное — серьёзный бизнес-тон.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 2 — РЕГАЛИИ / ПАРТНЁРЫ
+══════════════════════════════════════════════ -->
+<div class="section" id="block-2">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <div>
+      <div class="section-title">Регалии и партнёры</div>
+      <div class="section-subtitle">Быстрое подтверждение надёжности. Сразу после Hero.</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <h2 class="block-title">Что показываем</h2>
+    <ul class="spec-list">
+      <li><span class="tag tag-req">Обязательно</span> Логотип DocuSign (партнёр) — показывает, что работаем с электронными подписями в серьёзном контексте</li>
+      <li><span class="tag tag-req">Обязательно</span> Цифры: 20,500+ клиентов, 8+ лет, 100% handcrafted (no AI)</li>
+      <li><span class="tag tag-opt">Опционально</span> Другие логотипы партнёров или медиа-упоминаний — если есть</li>
+      <li><span class="tag tag-opt">Опционально</span> Значок «No AI generation» — это важный отличитель от конкурентов</li>
+    </ul>
+
+    <div class="copy-block">
+      <div class="copy-label">Заголовок блока (небольшой, серый)</div>
+      <div class="copy-text">Trusted by professionals worldwide</div>
+    </div>
+
+    <h2 class="block-title">Визуальная схема</h2>
+    <div class="wireframe">
+      <div class="wireframe-label">Схема блока Регалии</div>
+      <div class="wireframe-content">
+        <p style="text-align:center; font-size:11px; color:#aaa; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Trusted by professionals worldwide</p>
+        <div class="wf-row">
+          <div class="wf-box" style="text-align:center;">
+            <h4 style="font-size:20px;">20,500+</h4>
+            <p>Clients served</p>
+          </div>
+          <div class="wf-box" style="text-align:center;">
+            <h4 style="font-size:20px;">Since 2017</h4>
+            <p>8+ years of craft</p>
+          </div>
+          <div class="wf-box" style="text-align:center;">
+            <h4 style="font-size:20px;">100%</h4>
+            <p>Handcrafted · No AI</p>
+          </div>
+          <div class="wf-box" style="text-align:center;">
+            <h4 style="font-size:20px;">DocuSign</h4>
+            <p>Compatible partner</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Блок минимальный. Логотипы в серых тонах (не цветные) — это стандарт для серьёзных сайтов. Цифры крупные. Блок не должен кричать — он просто говорит факты.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 3 — ЦЕЛЕВАЯ АУДИТОРИЯ
+══════════════════════════════════════════════ -->
+<div class="section" id="block-3">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <div>
+      <div class="section-title">Целевая аудитория</div>
+      <div class="section-subtitle">Пользователь должен узнать себя. Описываем через ситуации, не через профессии.</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="info">
+      <strong>Ключевой принцип</strong>
+      <p>Не писать «для юристов и финансистов». Описывать через ситуации: «когда вы подписываете контракт перед клиентом», «когда начинаете новую должность». Клиент сам узнаёт себя.</p>
+    </div>
+
+    <div class="content-grid">
+      <div class="content-box box-was">
+        <div class="box-label">❌ Было (текущий сайт)</div>
+        <blockquote>Никакой явной аудитории не указано. Размытый оффер — «для всех».</blockquote>
+      </div>
+      <div class="content-box box-now">
+        <div class="box-label">✅ Стало</div>
+        <blockquote>Четыре категории пользователей с конкретными ситуациями. Менеджмент — на первом месте, фармацевты и узкие профессии — уходят.</blockquote>
+      </div>
+    </div>
+
+    <h2 class="block-title">Заголовок блока</h2>
+    <div class="copy-block">
+      <div class="copy-label">H2</div>
+      <div class="copy-text">A signature that works as hard as you do.</div>
+      <div class="copy-sub">Подзаголовок: Whether you sign documents daily or seal major deals — your signature is the last impression you leave.</div>
+    </div>
+
+    <h2 class="block-title">4 карточки аудитории</h2>
+
+    <h3 class="sub-title">Карточка 1 — Менеджмент и руководители</h3>
+    <div class="copy-block">
+      <div class="copy-label">Заголовок карточки</div>
+      <div class="copy-text">Executives & Managers</div>
+      <div class="copy-sub">When your signature appears on contracts, approvals and agreements — it should reflect where you are now, not where you started.</div>
+    </div>
+
+    <h3 class="sub-title">Карточка 2 — Предприниматели</h3>
+    <div class="copy-block">
+      <div class="copy-label">Заголовок карточки</div>
+      <div class="copy-text">Business Owners</div>
+      <div class="copy-sub">You've built something real. Your signature is often the only handwritten detail in an otherwise digital business — make it count.</div>
+    </div>
+
+    <h3 class="sub-title">Карточка 3 — Специалисты со статусом (юристы, врачи, консультанты)</h3>
+    <div class="copy-block">
+      <div class="copy-label">Заголовок карточки</div>
+      <div class="copy-text">Licensed Professionals</div>
+      <div class="copy-sub">Lawyers, doctors, consultants — your signature is a legal mark and a professional signal. It deserves the same attention as the rest of your practice.</div>
+    </div>
+
+    <h3 class="sub-title">Карточка 4 — Люди на старте нового этапа карьеры</h3>
+    <div class="copy-block">
+      <div class="copy-label">Заголовок карточки</div>
+      <div class="copy-text">Career Milestone</div>
+      <div class="copy-sub">New position. New company. New chapter. The moment you step up — your signature should too.</div>
+    </div>
+
+    <h2 class="block-title">Визуальная схема</h2>
+    <div class="wireframe">
+      <div class="wireframe-label">Схема блока Аудитория</div>
+      <div class="wireframe-content">
+        <p style="text-align:center; font-size:16px; font-weight:700; margin-bottom:4px;">A signature that works as hard as you do.</p>
+        <p style="text-align:center; font-size:12px; color:#888; margin-bottom:16px;">Whether you sign daily documents or major deals — your signature is the last impression.</p>
+        <div class="wf-audience-grid">
+          <div class="wf-aud-card">
+            <div class="icon">👔</div>
+            <h4>Executives & Managers</h4>
+            <p>Contracts, approvals, agreements</p>
+          </div>
+          <div class="wf-aud-card">
+            <div class="icon">🏢</div>
+            <h4>Business Owners</h4>
+            <p>The one handwritten detail in your business</p>
+          </div>
+          <div class="wf-aud-card">
+            <div class="icon">⚖️</div>
+            <h4>Licensed Professionals</h4>
+            <p>Lawyers, doctors, consultants</p>
+          </div>
+          <div class="wf-aud-card">
+            <div class="icon">🚀</div>
+            <h4>Career Milestone</h4>
+            <p>New position, new chapter</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Карточки — сдержанные, без ярких цветов. Иконки — минималистичные (линейные, не эмодзи). Акцент на тексте. Никаких фотографий людей — только ситуации. Порядок важен: менеджмент и руководители — первая карточка.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 4 — ПРИМЕРЫ РАБОТ И ПРОФЕССИИ
+══════════════════════════════════════════════ -->
+<div class="section" id="block-4">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <div>
+      <div class="section-title">Примеры работ</div>
+      <div class="section-subtitle">Портфолио без имён клиентов, но с профессиональным контекстом.</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="info">
+      <strong>Ключевой принцип</strong>
+      <p>Это главное социальное доказательство на сайте. Не отзывы — а работы. Показывать 8–12 подписей. К каждой — короткий контекст: «Signature for a finance executive» (без имени). Это профессиональная дистанция — и одновременно доказательство.</p>
+    </div>
+
+    <div class="content-grid">
+      <div class="content-box box-was">
+        <div class="box-label">❌ Было (текущий сайт)</div>
+        <blockquote>«Our works» — просто галерея подписей без контекста. Широкий микс профессий, включая фармацевтов, медсестёр и т.д.</blockquote>
+      </div>
+      <div class="content-box box-now">
+        <div class="box-label">✅ Стало</div>
+        <blockquote>Галерея с контекстом профессии. Менеджмент и предприниматели — в приоритете. Узкие профессии (фармацевты) убрать или поставить в конец.</blockquote>
+      </div>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Заголовок блока</div>
+      <div class="copy-text">Our work speaks for itself.</div>
+      <div class="copy-sub">A selection of signatures we've designed for professionals across industries. Client names are kept private.</div>
+    </div>
+
+    <h2 class="block-title">Подписи к примерам (тексты к каждой работе)</h2>
+    <ul class="spec-list">
+      <li>Signature for a Finance Director</li>
+      <li>Signature for a Real Estate Executive</li>
+      <li>Signature for a Tech Startup Founder</li>
+      <li>Signature for a Corporate Lawyer</li>
+      <li>Signature for a General Manager</li>
+      <li>Signature for a Consulting Partner</li>
+      <li>Signature for a Sales Director</li>
+      <li>Signature for a Physician (Private Practice)</li>
+    </ul>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Сетка или горизонтальный скролл. Подписи — на белом или очень светлом фоне. Подпись под изображением — мелкая серая подпись с контекстом профессии. До/после — можно показать 2–3 трансформации (было: каракули, стало: профессиональная подпись), но без акцента на «было плохо».</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 5 — ОПИСАНИЕ ПРОДУКТА (STRESS SIGNATURE)
+══════════════════════════════════════════════ -->
+<div class="section" id="block-5">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <div>
+      <div class="section-title">Описание продукта — Stress Signature</div>
+      <div class="section-subtitle">Уникальное УТП, которого нет ни у одного конкурента в мире.</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="info">
+      <strong>Почему это важно</strong>
+      <p>Ни один конкурент не работает с этой темой. Все продают «красивую подпись». Мы — единственные, кто говорит о разрыве между подписью в идеальных условиях и подписью в реальности (спешка, планшет, стресс). Это главное отличие.</p>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Заголовок блока</div>
+      <div class="copy-text">A signature that holds up under pressure.</div>
+      <div class="copy-sub">Подзаголовок: Most signatures look great at a desk. The problem is the rest of the time.</div>
+    </div>
+
+    <h2 class="block-title">Основной текст блока</h2>
+    <div class="copy-block">
+      <div class="copy-label">Объяснение концепта Stress Signature</div>
+      <div class="copy-text">Introducing Stress Signature</div>
+      <div class="copy-sub">
+        We design two versions of your signature.<br><br>
+        <strong>Your full signature</strong> — crafted for formal documents, presentations, and moments that matter.<br><br>
+        <strong>Your Stress Signature</strong> — a streamlined version designed for real conditions: quick approvals, tablet signing, the end of a long day. Same character, built to perform when you're not at your best.
+      </div>
+    </div>
+
+    <h2 class="block-title">3 тезиса под текстом</h2>
+
+    <div class="wf-row" style="margin:16px 0;">
+      <div style="flex:1; padding:16px; border:1px solid #e5e5e5; border-radius:8px;">
+        <div style="font-weight:700; margin-bottom:6px;">Signing a tablet at a hotel front desk</div>
+        <div style="font-size:13px; color:#666;">No surface tension, awkward angle — your stress signature handles it.</div>
+      </div>
+      <div style="flex:1; padding:16px; border:1px solid #e5e5e5; border-radius:8px;">
+        <div style="font-weight:700; margin-bottom:6px;">Rushing through 40 approvals</div>
+        <div style="font-size:13px; color:#666;">Speed without falling apart — designed to look intentional, not hurried.</div>
+      </div>
+      <div style="flex:1; padding:16px; border:1px solid #e5e5e5; border-radius:8px;">
+        <div style="font-weight:700; margin-bottom:6px;">High-stakes contract signing</div>
+        <div style="font-size:13px; color:#666;">When eyes are on you — your full signature delivers the impression it should.</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Этот блок — один из ключевых на странице. Визуально можно показать рядом два варианта подписи: «Full» и «Stress». Или анимацию — как подпись остаётся узнаваемой при быстром написании. Stress Signature включён в тарифы Optimal и Premier (не Standard). Это важно показать визуально.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 6 — ПРОЦЕСС РАБОТЫ
+══════════════════════════════════════════════ -->
+<div class="section" id="block-6">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <div>
+      <div class="section-title">Процесс работы</div>
+      <div class="section-subtitle">Снимаем тревогу: покупатель понимает, что именно произойдёт после оплаты.</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="copy-block">
+      <div class="copy-label">Заголовок блока</div>
+      <div class="copy-text">How it works</div>
+      <div class="copy-sub">Simple. Exactly what it sounds like.</div>
+    </div>
+
+    <h2 class="block-title">4 шага процесса</h2>
+
+    <table class="pricing-table">
+      <thead><tr><th>Шаг</th><th>Название</th><th>Описание для клиента</th><th>Срок</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>01</strong></td>
+          <td>Fill in a brief</td>
+          <td>Tell us about your preferences, style, and how you'll use your signature. Takes less than 5 minutes.</td>
+          <td>5 мин</td>
+        </tr>
+        <tr>
+          <td><strong>02</strong></td>
+          <td>We design options</td>
+          <td>Our calligrapher creates your signature options (3 for Standard & Optimal, 1 tailored variant for Premier).</td>
+          <td>3 дня</td>
+        </tr>
+        <tr>
+          <td><strong>03</strong></td>
+          <td>You choose & refine</td>
+          <td>Pick your favorite, or request edits. You have 3 rounds of revisions included in every plan.</td>
+          <td>По запросу</td>
+        </tr>
+        <tr>
+          <td><strong>04</strong></td>
+          <td>Learn to sign it</td>
+          <td>Your calligrapher records a personal video tutorial — just for your signature. You'll own it in 30 minutes.</td>
+          <td>24 часа</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="block-title">Визуальная схема</h2>
+    <div class="wireframe">
+      <div class="wireframe-label">Схема блока Процесс</div>
+      <div class="wireframe-content">
+        <p style="text-align:center; font-size:16px; font-weight:700; margin-bottom:16px;">How it works</p>
+        <div style="display:flex; gap:0; border:1px solid #e5e5e5; border-radius:8px; overflow:hidden;">
+          <div class="wf-step">
+            <div class="wf-step-num">01</div>
+            <h4>Fill in a brief</h4>
+            <p>Your preferences, style, usage · 5 min</p>
+          </div>
+          <div class="wf-step">
+            <div class="wf-step-num">02</div>
+            <h4>We design options</h4>
+            <p>3 signature concepts · within 3 days</p>
+          </div>
+          <div class="wf-step">
+            <div class="wf-step-num">03</div>
+            <h4>Choose & refine</h4>
+            <p>3 rounds of edits · until you love it</p>
+          </div>
+          <div class="wf-step">
+            <div class="wf-step-num">04</div>
+            <h4>Learn to sign it</h4>
+            <p>Personal video tutorial · 24 hours</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Шаги — горизонтальные, пронумерованные. Минималистично. Между шагами — стрелки или линии. Никаких иконок-смайликов. Добавить небольшую плашку: «Your manager will reach out via email within 24 hours of your order» — это важно для доверия.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 7 — ТАРИФЫ
+══════════════════════════════════════════════ -->
+<div class="section" id="block-7">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <div>
+      <div class="section-title">Тарифы</div>
+      <div class="section-subtitle">Три чётких плана. Без скидок. Без «limited time». Без инфобиза.</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="content-grid">
+      <div class="content-box box-was">
+        <div class="box-label">❌ Было (текущий сайт)</div>
+        <blockquote>$69 / $140 / $269 с агрессивными скидками 50%. Акции, баннеры, «успей». Тарифы: Standard / Optimal / Premier — без чёткой разницы в ценности.</blockquote>
+      </div>
+      <div class="content-box box-now">
+        <div class="box-label">✅ Стало</div>
+        <blockquote>$99 / $159 / $249. Никаких скидок на главном экране тарифов. Разница между тарифами чётко объяснена. Optimal — рекомендованный (Stress Signature включён). Premier — подпись под ваш почерк.</blockquote>
+      </div>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Заголовок блока</div>
+      <div class="copy-text">Choose your plan</div>
+      <div class="copy-sub">Every plan includes a personal video tutorial and our handwriting practice course. No subscriptions, no hidden fees.</div>
+    </div>
+
+    <h2 class="block-title">Тарифная таблица</h2>
+    <table class="pricing-table">
+      <thead>
+        <tr>
+          <th>Параметр</th>
+          <th>Standard · $99</th>
+          <th>Optimal · $159 ⭐ Рекомендуем</th>
+          <th>Premier · $249</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Варианты подписи</td><td>3 варианта</td><td>3 варианта</td><td>1 вариант (под ваш почерк)</td></tr>
+        <tr><td>Правки</td><td class="check">✓ 3 правки</td><td class="check">✓ 3 правки</td><td class="check">✓ 3 правки</td></tr>
+        <tr><td>Stress Signature</td><td class="cross">✗ Нет</td><td class="check">✓ Включено</td><td class="check">✓ Включено</td></tr>
+        <tr><td>Индивидуальное видеообучение</td><td class="check">✓ Да</td><td class="check">✓ Да</td><td class="check">✓ Да</td></tr>
+        <tr><td>Курс Learn to Write. Again</td><td class="check">✓ Да</td><td class="check">✓ Да</td><td class="check">✓ Да</td></tr>
+        <tr><td>Анализ почерка</td><td class="cross">✗ Нет</td><td class="cross">✗ Нет</td><td class="check">✓ Рукописный анализ</td></tr>
+        <tr><td>CTA</td><td>Get Standard</td><td>Get Optimal</td><td>Get Premier</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="block-title">Тексты карточек тарифов</h2>
+
+    <h3 class="sub-title">Standard — $99</h3>
+    <div class="copy-block">
+      <div class="copy-label">Описание под ценой</div>
+      <div class="copy-text">The foundation. A professionally designed signature with everything you need to start using it immediately.</div>
+    </div>
+
+    <h3 class="sub-title">Optimal — $159 (рекомендуемый)</h3>
+    <div class="copy-block">
+      <div class="copy-label">Описание под ценой</div>
+      <div class="copy-text">The complete package. Includes Stress Signature — a streamlined version designed for real-world signing conditions.</div>
+    </div>
+
+    <h3 class="sub-title">Premier — $249</h3>
+    <div class="copy-block">
+      <div class="copy-label">Описание под ценой</div>
+      <div class="copy-text">Fully personalized. We analyze your natural handwriting and craft a signature that feels like an evolved version of you — not a replacement.</div>
+    </div>
+
+    <h2 class="block-title">Визуальная схема</h2>
+    <div class="wireframe">
+      <div class="wireframe-label">Схема блока Тарифы</div>
+      <div class="wireframe-content">
+        <p style="text-align:center; font-size:16px; font-weight:700; margin-bottom:4px;">Choose your plan</p>
+        <p style="text-align:center; font-size:12px; color:#888; margin-bottom:16px;">Every plan includes a personal video tutorial and handwriting practice course.</p>
+        <div class="wf-price-row">
+          <div class="wf-price-card">
+            <div class="plan-name">Standard</div>
+            <div class="price">$99</div>
+            <ul>
+              <li>3 signature options</li>
+              <li>3 rounds of edits</li>
+              <li>Video tutorial</li>
+              <li>Learn to Write. Again course</li>
+            </ul>
+          </div>
+          <div class="wf-price-card featured">
+            <div style="font-size:11px; color:#aaa; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px;">Most popular</div>
+            <div class="plan-name">Optimal</div>
+            <div class="price">$159</div>
+            <ul>
+              <li>3 signature options</li>
+              <li>3 rounds of edits</li>
+              <li>Stress Signature ✦</li>
+              <li>Video tutorial</li>
+              <li>Learn to Write. Again course</li>
+            </ul>
+          </div>
+          <div class="wf-price-card">
+            <div class="plan-name">Premier</div>
+            <div class="price">$249</div>
+            <ul>
+              <li>1 signature (tailored to your handwriting)</li>
+              <li>3 rounds of edits</li>
+              <li>Stress Signature ✦</li>
+              <li>Video tutorial</li>
+              <li>Learn to Write. Again course</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Карточка Optimal — выделена (тёмный фон или рамка). Пометка «Most popular» — маленькая, сверху. Никаких «СКИДКА 50%» или таймеров. Текст кнопок — «Get Standard / Get Optimal / Get Premier», а не «Buy Now» или «Order». Под тарифами — одна строка мелким: «You can pay with PayPal, Apple Pay, Visa, Mastercard.»</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 8 — ТАРИФ ПРЕМЬЕР (DEEP DIVE)
+══════════════════════════════════════════════ -->
+<div class="section" id="block-8">
+  <div class="section-header">
+    <div class="section-num">8</div>
+    <div>
+      <div class="section-title">Тариф «Premier» — детальный блок</div>
+      <div class="section-subtitle">Объяснение уникальной механики анализа почерка. Отдельный блок под тарифами.</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="info">
+      <strong>Зачем отдельный блок</strong>
+      <p>Premier — самый дорогой тариф с уникальной механикой. Клиент должен понять, чем он принципиально отличается от Optimal. «Подпись под ваш почерк» — это сложная концепция, которую нужно объяснить. Этот блок делает это.</p>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Заголовок блока</div>
+      <div class="copy-text">Premier: built around your handwriting.</div>
+      <div class="copy-sub">Not a signature designed for you. A signature evolved from you.</div>
+    </div>
+
+    <h2 class="block-title">Объяснение механики (основной текст)</h2>
+    <div class="copy-block">
+      <div class="copy-label">Текстовый блок объяснения</div>
+      <div class="copy-text">How Premier is different</div>
+      <div class="copy-sub">
+        In Standard and Optimal, our calligrapher designs a signature based on your preferences and style choices.<br><br>
+        In Premier, we start with your actual handwriting.<br><br>
+        You write a few words — your name, a phrase, anything natural. Our calligrapher analyzes how your hand moves: the pressure, the rhythm, the natural letter connections that are yours alone.<br><br>
+        The result is a signature that feels like something you've always had — refined, not replaced.
+      </div>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Аналогия (помогает продать разницу)</div>
+      <div class="copy-text">Like a bespoke suit — cut to your exact measurements, not just your size.</div>
+    </div>
+
+    <h2 class="block-title">3 шага процесса Premier</h2>
+    <ul class="spec-list">
+      <li>You write several words in your natural handwriting — no preparation needed</li>
+      <li>Our calligrapher analyzes the rhythm, pressure, and natural letter shapes in your writing</li>
+      <li>We craft one signature that builds on your existing hand — not a template, not a style from a catalogue</li>
+    </ul>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Визуально: показать процесс трансформации — «обычный рукописный текст» → «анализ» → «готовая подпись». Можно сделать в 3 шага с изображениями. Этот блок должен быть чуть более «дорогим» визуально — отличаться от остальных блоков фоном или рамкой. Он продаёт самый дорогой тариф.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 9 — ОТЗЫВЫ
+══════════════════════════════════════════════ -->
+<div class="section" id="block-9">
+  <div class="section-header">
+    <div class="section-num">9</div>
+    <div>
+      <div class="section-title">Отзывы</div>
+      <div class="section-subtitle">Сдержанные и фактические. Никаких восклицательных знаков и «я в восторге!!!»</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="content-grid">
+      <div class="content-box box-was">
+        <div class="box-label">❌ Формат который убираем</div>
+        <blockquote>«OMG I'm so obsessed!!! Best purchase of my life!!!»<br><br>Слишком эмоционально для деловой аудитории. Отталкивает менеджмент.</blockquote>
+      </div>
+      <div class="content-box box-now">
+        <div class="box-label">✅ Формат который добавляем</div>
+        <blockquote>Фактические, сдержанные отзывы с контекстом: профессия, как использует. Не восторг — а профессиональная оценка.</blockquote>
+      </div>
+    </div>
+
+    <div class="copy-block">
+      <div class="copy-label">Заголовок блока</div>
+      <div class="copy-text">What our clients say</div>
+    </div>
+
+    <h2 class="block-title">Примеры форматирования отзывов</h2>
+
+    <div class="wireframe">
+      <div class="wireframe-label">Схема отзывов — формат карточек</div>
+      <div class="wireframe-content">
+        <div class="wf-testimonial-row">
+          <div class="wf-testimonial">
+            <div class="name">Tom G. · Real Estate, Florida</div>
+            <div class="quote">«I ordered before taking on a new partner. The process was straightforward, and I've been using the signature for 8 months. It holds up exactly as described — including on tablet signings.»</div>
+          </div>
+          <div class="wf-testimonial">
+            <div class="name">M. Brown · Photography, New York</div>
+            <div class="quote">«Got Premier. The result was closer to my natural writing than I expected. Took about a week to get comfortable, now it's automatic.»</div>
+          </div>
+          <div class="wf-testimonial">
+            <div class="name">A. Creasey · Business Coach</div>
+            <div class="quote">«I'd put off doing this for two years. Took 30 minutes to learn. Worth it.»</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="block-title">Видеоотзывы</h2>
+    <div class="info">
+      <strong>Отдельный раздел или встроенный</strong>
+      <p>Если есть видеоотзывы — разместить в отдельном подблоке. Предпочтительный формат: сетка 2×2 с превью. Важно: видео-отзывы работают лучше всего для продукта, который «невидим» до покупки. Они снимают главный барьер — «я не знаю, что получу».</p>
+    </div>
+
+    <ul class="spec-list">
+      <li><span class="tag tag-req">Обязательно</span> Имя + профессия/сфера под каждым отзывом</li>
+      <li><span class="tag tag-req">Обязательно</span> Убрать восклицательные знаки из отзывов при редактировании</li>
+      <li><span class="tag tag-opt">Опционально</span> Фото клиента (если дали разрешение) — добавляет доверие</li>
+      <li><span class="tag tag-opt">Опционально</span> Instagram handle — @username — кликабельный</li>
+    </ul>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Карточки отзывов — на светлом фоне, без звёздочек. Либо формат «цитата + имя + должность». Никаких ярких цветных фонов. Раздел видеоотзывов можно оформить отдельной полосой с тёмным фоном для визуального разнообразия.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 10 — FAQ
+══════════════════════════════════════════════ -->
+<div class="section" id="block-10">
+  <div class="section-header">
+    <div class="section-num">10</div>
+    <div>
+      <div class="section-title">Часто задаваемые вопросы (FAQ)</div>
+      <div class="section-subtitle">Снимаем последние возражения перед покупкой.</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="copy-block">
+      <div class="copy-label">Заголовок блока</div>
+      <div class="copy-text">Questions</div>
+    </div>
+
+    <h2 class="block-title">Вопросы и ответы</h2>
+
+    <table class="pricing-table">
+      <thead><tr><th>Вопрос</th><th>Ответ</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>My handwriting is really bad. Is it a problem?</strong></td>
+          <td>Not at all. Most of our clients come to us precisely because they're not happy with their current writing. We design from scratch — or in Premier, we take what's there and refine it. Either way works.</td>
+        </tr>
+        <tr>
+          <td><strong>What exactly is Stress Signature?</strong></td>
+          <td>It's a simplified version of your main signature — designed to look intentional when you're signing quickly, on a tablet, or under pressure. Included in Optimal and Premier plans.</td>
+        </tr>
+        <tr>
+          <td><strong>Will my new signature be legally binding?</strong></td>
+          <td>Yes. A legal signature in the US and most countries only requires consistent use and intent. Your new signature will be exactly as valid as any other.</td>
+        </tr>
+        <tr>
+          <td><strong>How do I learn to sign it?</strong></td>
+          <td>After your signature is approved, your calligrapher records a personal video tutorial — filmed specifically for your signature, not a generic guide. Most clients feel confident in 30 minutes of practice.</td>
+        </tr>
+        <tr>
+          <td><strong>What's in the «Learn to Write. Again» course?</strong></td>
+          <td>It's a 7-day program to improve your overall handwriting — not just your signature. Created by Ann Storm, our chief calligrapher. It comes with every plan at no extra cost.</td>
+        </tr>
+        <tr>
+          <td><strong>How long does it take?</strong></td>
+          <td>First options arrive within 3 business days. Once you approve your choice, the video tutorial is delivered within 24 hours.</td>
+        </tr>
+        <tr>
+          <td><strong>What if I'm not satisfied?</strong></td>
+          <td>You have 3 rounds of revisions. If you're still not satisfied after using all edits — we offer a refund. No complicated process.</td>
+        </tr>
+        <tr>
+          <td><strong>Do you share my signature publicly?</strong></td>
+          <td>Only with your explicit permission. Our portfolio shows signatures with professional context but no client names. You can opt out entirely.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="block-title">Визуальная схема</h2>
+    <div class="wireframe">
+      <div class="wireframe-label">Схема блока FAQ — аккордеон</div>
+      <div class="wireframe-content">
+        <div class="wf-faq">
+          <div class="wf-faq-item"><p>My handwriting is really bad. Is it a problem?</p><span>+</span></div>
+          <div class="wf-faq-item"><p>What exactly is Stress Signature?</p><span>+</span></div>
+          <div class="wf-faq-item"><p>Will my new signature be legally binding?</p><span>+</span></div>
+          <div class="wf-faq-item"><p>How do I learn to sign it?</p><span>+</span></div>
+          <div class="wf-faq-item"><p>How long does it take?</p><span>+</span></div>
+          <div class="wf-faq-item"><p>What if I'm not satisfied?</p><span>+</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Формат аккордеона (раскрывающиеся вопросы). Вопросы — жирные. Ответы появляются при клике. Минималистичный дизайн. Под FAQ — финальный CTA.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     БЛОК 11 — ПОДВАЛ
+══════════════════════════════════════════════ -->
+<div class="section" id="block-11">
+  <div class="section-header">
+    <div class="section-num">11</div>
+    <div>
+      <div class="section-title">Подвал сайта (Footer)</div>
+      <div class="section-subtitle">Финальный CTA + контакты + юридика.</div>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <h2 class="block-title">Финальный CTA перед подвалом</h2>
+    <div class="copy-block">
+      <div class="copy-label">Заголовок финального CTA (перед footer)</div>
+      <div class="copy-text">Your signature is the only handwritten part of your professional life.</div>
+      <div class="copy-sub">Make it intentional.<br><br>
+      <strong>Кнопка:</strong> Get My Signature</div>
+    </div>
+
+    <h2 class="block-title">Состав подвала</h2>
+    <ul class="spec-list">
+      <li><span class="tag tag-req">Обязательно</span> Логотип SignaturePro</li>
+      <li><span class="tag tag-req">Обязательно</span> Email поддержки</li>
+      <li><span class="tag tag-req">Обязательно</span> Телефон: +1 (754) 329-3011</li>
+      <li><span class="tag tag-req">Обязательно</span> Адрес: 1849 S Ocean Dr, Hallandale Beach, FL 33009</li>
+      <li><span class="tag tag-req">Обязательно</span> Часы работы: Mon–Fri 10AM–6PM, Sat 12AM–6PM, Sun closed</li>
+      <li><span class="tag tag-req">Обязательно</span> Ссылки: Privacy Policy · Refund Policy · Terms of Service</li>
+      <li><span class="tag tag-req">Обязательно</span> © 2017–2025 USA CHECK NY INC. All rights reserved.</li>
+      <li><span class="tag tag-opt">Опционально</span> Ссылка на Instagram</li>
+      <li><span class="tag tag-opt">Опционально</span> Ссылка на главный сайт signatureprodesign.com</li>
+    </ul>
+
+    <div class="note">
+      <strong>Комментарий дизайнеру</strong>
+      <p>Тёмный подвал. Лаконично. Никаких дополнительных блоков с акциями или баннерами. Перед подвалом — полноширинный финальный CTA-блок с одним заголовком и одной кнопкой.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════ SUMMARY TABLE ════════════════════ -->
+<div class="section" style="background:#1a1a1a; color:#fff; border-color:#333;">
+  <div class="section-header" style="background:#111; border-color:#333;">
+    <div class="section-num" style="background:#fff; color:#1a1a1a;">→</div>
+    <div>
+      <div class="section-title" style="color:#fff;">Сводная таблица изменений</div>
+      <div class="section-subtitle" style="color:#666;">Что убрать, что добавить, что изменить</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <table class="pricing-table" style="color:#ccc;">
+      <thead><tr><th style="background:#222;">Элемент</th><th style="background:#222;">Было</th><th style="background:#222;">Стало</th></tr></thead>
+      <tbody>
+        <tr style="color:#ccc;">
+          <td style="border-color:#333;">Главный слоган</td>
+          <td style="border-color:#333; color:#888;">«Express your personality»</td>
+          <td style="border-color:#333; color:#86efac;">«You've outgrown your signature.»</td>
+        </tr>
+        <tr style="background:#111; color:#ccc;">
+          <td style="border-color:#333;">Целевая аудитория</td>
+          <td style="border-color:#333; color:#888;">Все, кто хочет красивую подпись</td>
+          <td style="border-color:#333; color:#86efac;">Менеджмент, предприниматели, специалисты</td>
+        </tr>
+        <tr style="color:#ccc;">
+          <td style="border-color:#333;">Цены</td>
+          <td style="border-color:#333; color:#888;">$69 / $140 / $269 со скидками 50%</td>
+          <td style="border-color:#333; color:#86efac;">$99 / $159 / $249 без скидок</td>
+        </tr>
+        <tr style="background:#111; color:#ccc;">
+          <td style="border-color:#333;">Ключевое УТП</td>
+          <td style="border-color:#333; color:#888;">Handcrafted, exclusive</td>
+          <td style="border-color:#333; color:#86efac;">Stress Signature — работает в реальных условиях</td>
+        </tr>
+        <tr style="color:#ccc;">
+          <td style="border-color:#333;">Тариф Premier</td>
+          <td style="border-color:#333; color:#888;">Не объяснён, нет механики</td>
+          <td style="border-color:#333; color:#86efac;">Анализ почерка, «как костюм по меркам»</td>
+        </tr>
+        <tr style="background:#111; color:#ccc;">
+          <td style="border-color:#333;">Отзывы</td>
+          <td style="border-color:#333; color:#888;">Восторженные, эмоциональные</td>
+          <td style="border-color:#333; color:#86efac;">Фактические, с профессиональным контекстом</td>
+        </tr>
+        <tr style="color:#ccc;">
+          <td style="border-color:#333;">Акции и таймеры</td>
+          <td style="border-color:#333; color:#888;">«50% off», таймеры, «limited offer»</td>
+          <td style="border-color:#333; color:#86efac;">Убрать полностью</td>
+        </tr>
+        <tr style="background:#111; color:#ccc;">
+          <td style="border-color:#333;">Курс в тарифе</td>
+          <td style="border-color:#333; color:#888;">«Learn to Write. Again» — отдельный акцент</td>
+          <td style="border-color:#333; color:#86efac;">Включён во все тарифы, не акцентируется отдельно</td>
+        </tr>
+        <tr style="color:#ccc;">
+          <td style="border-color:#333;">Фокус профессий в портфолио</td>
+          <td style="border-color:#333; color:#888;">Широкий микс включая фармацевтов</td>
+          <td style="border-color:#333; color:#86efac;">Менеджмент, предприниматели, юристы — в приоритете</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<div class="doc-footer">
+  <p>SignaturePro · ТЗ для нового лендинга · Апрель 2026</p>
+  <p style="margin-top:6px; font-size:12px;">Документ подготовлен для передачи веб-дизайнеру. Структура страницы — 11 блоков. Тексты готовы к использованию.</p>
+</div>
+
+</body>
+</html>
