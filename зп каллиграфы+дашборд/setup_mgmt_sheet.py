@@ -237,20 +237,23 @@ ADJ_HEADERS = ["Период", "Сотрудник", "Тип", "Сумма", "К
 
 
 def setup_adjustments_sheet(sh, ws):
+    """
+    Лист Корректировки — выпадающие списки:
+      A (Период)     : из История_ЗП!$A$2:$A$1000
+      B (Сотрудник)  : из Ставки!$A$12:$A$100
+      C (Тип)        : Премия / Доплата / Аванс / Вычет / Штраф
+      D (Сумма)      : денежный формат (+ доплата, − вычет)
+      E (Комментарий): текст
+      F (Дата)       : дата добавления
+    """
     print("  Настраиваю лист 'Корректировки'...")
     sid = ws.id
-
-    hint = (
-        "Типы: Премия / Доплата / Аванс / Вычет / Штраф  |  "
-        "Сумма: положительная = доплата, отрицательная = вычет  |  "
-        "Формат периода: ДД.ММ.ГГГГ — ДД.ММ.ГГГГ"
-    )
 
     _with_retry(lambda: ws.clear())
     time.sleep(1)
     _with_retry(lambda: ws.update(
         range_name="A1",
-        values=[ADJ_HEADERS, [hint, "", "", "", "", ""]],
+        values=[ADJ_HEADERS],
         value_input_option="USER_ENTERED"
     ))
     time.sleep(1)
@@ -261,30 +264,67 @@ def setup_adjustments_sheet(sh, ws):
     fmt = [
         _bg_row(sid, 0, YLW, nc), _bold_row(sid, 0, nc),
         _freeze(sid, 1),
-        _col_width(sid, 0, 1, 210),
-        _col_width(sid, 1, 2, 170),
-        _col_width(sid, 2, 3, 110),
-        _col_width(sid, 3, 4, 100),
-        _col_width(sid, 4, 5, 250),
-        _col_width(sid, 5, 6, 140),
-        # Dropdown for Тип column (C, index 2)
+        _col_width(sid, 0, 1, 220),
+        _col_width(sid, 1, 2, 180),
+        _col_width(sid, 2, 3, 120),
+        _col_width(sid, 3, 4, 110),
+        _col_width(sid, 4, 5, 260),
+        _col_width(sid, 5, 6, 150),
+
+        # A (Период): выпадающий список из История_ЗП
         {"setDataValidation": {
-            "range": {"sheetId": sid, "startRowIndex": 2, "endRowIndex": 500,
+            "range": {"sheetId": sid, "startRowIndex": 1, "endRowIndex": 500,
+                      "startColumnIndex": 0, "endColumnIndex": 1},
+            "rule": {
+                "condition": {
+                    "type": "ONE_OF_RANGE",
+                    "values": [{"userEnteredValue": "='\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!$A$2:$A$1000"}]
+                },
+                "showCustomUi": True, "strict": False,
+            },
+        }},
+
+        # B (Сотрудник): выпадающий список из Ставки
+        {"setDataValidation": {
+            "range": {"sheetId": sid, "startRowIndex": 1, "endRowIndex": 500,
+                      "startColumnIndex": 1, "endColumnIndex": 2},
+            "rule": {
+                "condition": {
+                    "type": "ONE_OF_RANGE",
+                    "values": [{"userEnteredValue": "='\u0421\u0442\u0430\u0432\u043a\u0438'!$A$12:$A$100"}]
+                },
+                "showCustomUi": True, "strict": False,
+            },
+        }},
+
+        # C (Тип): фиксированный список
+        {"setDataValidation": {
+            "range": {"sheetId": sid, "startRowIndex": 1, "endRowIndex": 500,
                       "startColumnIndex": 2, "endColumnIndex": 3},
             "rule": {
                 "condition": {"type": "ONE_OF_LIST", "values": [
-                    {"userEnteredValue": "Премия"},
-                    {"userEnteredValue": "Доплата"},
-                    {"userEnteredValue": "Аванс"},
-                    {"userEnteredValue": "Вычет"},
-                    {"userEnteredValue": "Штраф"},
+                    {"userEnteredValue": "\u041f\u0440\u0435\u043c\u0438\u044f"},
+                    {"userEnteredValue": "\u0414\u043e\u043f\u043b\u0430\u0442\u0430"},
+                    {"userEnteredValue": "\u0410\u0432\u0430\u043d\u0441"},
+                    {"userEnteredValue": "\u0412\u044b\u0447\u0435\u0442"},
+                    {"userEnteredValue": "\u0428\u0442\u0440\u0430\u0444"},
                 ]},
                 "showCustomUi": True, "strict": True,
             },
         }},
+
+        # D (Сумма): денежный формат
+        {"repeatCell": {
+            "range": {"sheetId": sid, "startRowIndex": 1, "endRowIndex": 500,
+                      "startColumnIndex": 3, "endColumnIndex": 4},
+            "cell": {"userEnteredFormat": {
+                "numberFormat": {"type": "CURRENCY", "pattern": "# ##0 \"\u20bd\""}
+            }},
+            "fields": "userEnteredFormat.numberFormat",
+        }},
     ]
     _with_retry(lambda: sh.batch_update({"requests": fmt}))
-    print("    [OK] Лист 'Корректировки' готов")
+    print("    [OK] Лист 'Корректировки' готов (дропдауны Период, Сотрудник, Тип)")
     time.sleep(1)
 
 
@@ -312,15 +352,41 @@ def setup_total_sheet(sh, ws):
         ("A1",  [["ИТОГО К ВЫПЛАТЕ — SignaturePro ЗП Дашборд"]]),
         ("B3",  [["Период:"]]),
         ("C3",  [["(введи или выбери период из 'История_ЗП'!A:A)"]]),
-        ("B5",  [["Итого к выплате (ЗП + корректировки):"]]),
+        ("B5",  [["Итого к выплате (ЗП + доплаты):"]]),
         ("B6",  [["  из них базовая ЗП:"]]),
-        ("B7",  [["  корректировки (\u00b1):"]]),
+        ("B7",  [["  доплаты / вычеты (\u00b1):"]]),
         ("B8",  [["  \U0001f1fa\U0001f1f8 из них USA:"]]),
         ("B9",  [["  \U0001f1f7\U0001f1fa из них RU:"]]),
-        ("A11", [["ИСТОРИЯ ЗП ЗА ПЕРИОД"]]),
-        ("J11", [["КОРРЕКТИРОВКИ ЗА ПЕРИОД"]]),
+        # Раздел: сводка по сотрудникам (строки 11-12)
+        ("A11", [["\u0421\u0412\u041e\u0414\u041a\u0410 \u041f\u041e \u0421\u041e\u0422\u0420\u0423\u0414\u041d\u0418\u041a\u0410\u041c \u2014 \u0411\u0410\u0417\u041e\u0412\u0410\u042f \u0417\u041f + \u0414\u041e\u041f\u041b\u0410\u0422\u042b"]]),
+        ("A12", [["\u0421\u043e\u0442\u0440\u0443\u0434\u043d\u0438\u043a",
+                  "\u0411\u0430\u0437\u043e\u0432\u0430\u044f \u0417\u041f",
+                  "\u0414\u043e\u043f\u043b\u0430\u0442\u044b (\u00b1)",
+                  "\u0418\u0442\u043e\u0433\u043e \u043a \u0432\u044b\u043f\u043b\u0430\u0442\u0435"]]),
+        # Разделители истории и доплат (строки 29-30)
+        ("A29", [["\u0418\u0421\u0422\u041e\u0420\u0418\u042f \u0417\u041f \u0417\u0410 \u041f\u0415\u0420\u0418\u041e\u0414"]]),
+        ("H29", [["\u0414\u041e\u041f\u041b\u0410\u0422\u042b \u0417\u0410 \u041f\u0415\u0420\u0418\u041e\u0414"]]),
     ]
-    # Formulas referencing C3
+
+    # Формулы сводных сумм (C5-C9)
+    # Формулы SUMIFS по сотрудникам (B13:D27)
+    per_emp_formulas = []
+    for r in range(13, 28):
+        b = (
+            f"=IF(A{r}=\"\",\"\","
+            f"IFERROR(SUMIFS('\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!O:O,"
+            f"'\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!A:A,$C$3,"
+            f"'\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!C:C,A{r}),0))"
+        )
+        c = (
+            f"=IF(A{r}=\"\",\"\","
+            f"IFERROR(SUMIFS('\u041a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043a\u0438'!D:D,"
+            f"'\u041a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043a\u0438'!A:A,$C$3,"
+            f"'\u041a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043a\u0438'!B:B,A{r}),0))"
+        )
+        d = f"=IF(A{r}=\"\",\"\",B{r}+C{r})"
+        per_emp_formulas.append((f"B{r}:D{r}", [[b, c, d]]))
+
     formulas = [
         ("C5", [["=IFERROR(SUMIF('\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!A:A,C3,'\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!O:O)"
                  "+SUMIF('\u041a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043a\u0438'!A:A,C3,'\u041a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043a\u0438'!D:D),0)"]]),
@@ -328,18 +394,23 @@ def setup_total_sheet(sh, ws):
         ("C7", [["=IFERROR(SUMIF('\u041a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043a\u0438'!A:A,C3,'\u041a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043a\u0438'!D:D),0)"]]),
         ("C8", [["=IFERROR(SUMIF('\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!A:A,C3,'\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!P:P),0)"]]),
         ("C9", [["=IFERROR(SUMIF('\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!A:A,C3,'\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!Q:Q),0)"]]),
-        ("A12", [["=IFERROR(QUERY('\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!A:Q,"
+        # QUERY список сотрудников (A13, спускается вниз)
+        ("A13", [["=IFERROR(QUERY('\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!A:C,"
+                  "\"SELECT C WHERE A='\"&$C$3&\"' GROUP BY C ORDER BY C\",0),\"\")"]]),
+        # История ЗП (A30)
+        ("A30", [["=IFERROR(QUERY('\u0418\u0441\u0442\u043e\u0440\u0438\u044f_\u0417\u041f'!A:Q,"
                   "\"SELECT C,D,F,O,P,Q WHERE A='\"&C3&\"' "
                   "ORDER BY D,C "
                   "LABEL C '\u0421\u043e\u0442\u0440\u0443\u0434\u043d\u0438\u043a',D '\u0420\u043e\u043b\u044c',F '\u0417\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u043e',"
                   "O '\u041a \u0432\u044b\u043f\u043b\u0430\u0442\u0435',P 'USA',Q 'RU'\",0),"
-                  "\"\u041d\u0435\u0442 \u0434\u0430\u043d\u043d\u044b\u0445 \u0437\u0430 \u0432\u044b\u0431\u0440\u0430\u043d\u043d\u044b\u0439 \u043f\u0435\u0440\u0438\u043e\u0434\")"]]),
-        ("J12", [["=IFERROR(QUERY('\u041a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043a\u0438'!A:F,"
+                  "\"\u041d\u0435\u0442 \u0434\u0430\u043d\u043d\u044b\u0445\")"]]),
+        # Доплаты (H30)
+        ("H30", [["=IFERROR(QUERY('\u041a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043a\u0438'!A:F,"
                   "\"SELECT B,C,D,E WHERE A='\"&C3&\"' "
                   "ORDER BY B "
                   "LABEL B '\u0421\u043e\u0442\u0440\u0443\u0434\u043d\u0438\u043a',C '\u0422\u0438\u043f',D '\u0421\u0443\u043c\u043c\u0430',E '\u041a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u0439'\",0),"
-                  "\"\u041d\u0435\u0442 \u043a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043e\u043a\")"]]),
-    ]
+                  "\"\u041d\u0435\u0442 \u0434\u043e\u043f\u043b\u0430\u0442\")"]]),
+    ] + per_emp_formulas
 
     for cell, val in labels + formulas:
         _with_retry(lambda c=cell, v=val: ws.update(
@@ -349,13 +420,14 @@ def setup_total_sheet(sh, ws):
 
     BLU     = _rgb(26, 115, 232)
     GRY     = _rgb(241, 241, 241)
+    GRN_DRK = _rgb(52, 168, 83)
+    GRN_LT  = _rgb(182, 215, 168)
     BLU_LT  = _rgb(219, 234, 254)   # USA row bg
     ROSE_LT = _rgb(254, 226, 226)   # RU row bg
 
     fmt = [
         _bg_row(sid, 0, BLU, 14), _white_text_row(sid, 0, 14),  # title row
         _bold_row(sid, 4, 5),                                     # Итого к выплате (row 5=idx 4)
-        _bg_row(sid, 10, GRY, 14), _bold_row(sid, 10, 14),       # section headers (row 11=idx 10)
         # Подсветка USA/RU строк (rows 8-9 = idx 7-8)
         {"repeatCell": {
             "range": {"sheetId": sid, "startRowIndex": 7, "endRowIndex": 8,
@@ -379,9 +451,15 @@ def setup_total_sheet(sh, ws):
                 "showCustomUi": True, "strict": False,
             },
         }},
-        _col_width(sid, 1, 2, 290),
-        _col_width(sid, 2, 3, 220),
-        _col_width(sid, 0, 1, 170),
+        # Сводка по сотрудникам: заголовок раздела (row 11 = idx 10)
+        _bg_row(sid, 10, GRN_DRK, 5), _white_text_row(sid, 10, 5),
+        # Хедеры колонок (row 12 = idx 11)
+        _bg_row(sid, 11, GRN_LT, 5), _bold_row(sid, 11, 5),
+        # Заголовки истории/доплат (row 29 = idx 28)
+        _bg_row(sid, 28, GRY, 14), _bold_row(sid, 28, 14),
+        _col_width(sid, 0, 1, 200),
+        _col_width(sid, 1, 4, 155),
+        _col_width(sid, 4, 14, 140),
         # Currency format для C5:C9 (Итого + компоненты + USA + RU)
         {"repeatCell": {
             "range": {"sheetId": sid, "startRowIndex": 4, "endRowIndex": 9,
@@ -398,6 +476,22 @@ def setup_total_sheet(sh, ws):
                       "startColumnIndex": 2, "endColumnIndex": 3},
             "cell": {"userEnteredFormat": {"textFormat": {"italic": True, "bold": False}}},
             "fields": "userEnteredFormat.textFormat",
+        }},
+        # Currency format для B13:D27 (сводка по сотрудникам)
+        {"repeatCell": {
+            "range": {"sheetId": sid, "startRowIndex": 12, "endRowIndex": 27,
+                      "startColumnIndex": 1, "endColumnIndex": 4},
+            "cell": {"userEnteredFormat": {
+                "numberFormat": {"type": "CURRENCY", "pattern": "# ##0 \"\u20bd\""},
+            }},
+            "fields": "userEnteredFormat.numberFormat",
+        }},
+        # Bold итог (col D = idx 3)
+        {"repeatCell": {
+            "range": {"sheetId": sid, "startRowIndex": 12, "endRowIndex": 27,
+                      "startColumnIndex": 3, "endColumnIndex": 4},
+            "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
+            "fields": "userEnteredFormat.textFormat.bold",
         }},
     ]
     _with_retry(lambda: sh.batch_update({"requests": fmt}))
