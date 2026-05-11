@@ -1,0 +1,30 @@
+# Учётные данные Google — никогда не коммитить!
+credentials.json
+_credentials_cloud.json
+RENDER_CREDENTIALS_B64.txt
+
+# Локальный Excel-файл с данными
+*.xlsx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.env
+.venv
+venv/
+
+# Временные файлы
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# Markdown-документы с промтами (не нужны в репозитории)
+prompt_dlya_kursora*.md
+dashboard_country_split.md
