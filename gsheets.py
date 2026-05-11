@@ -134,6 +134,14 @@ def _row_to_order(row, sheet_name):
     def pd(val):
         return _parse_date(val, sheet_year)
 
+    # Если "варианты" заполнен, но не является датой (например, галочка, цифра, "✓"),
+    # считаем что варианты были сданы в дату поступления заказа (fallback).
+    # Это нужно для корректного подсчёта ЗП в дашборде по старым данным без дат.
+    _variants_raw = str(r[6]).strip() if r[6] else ""
+    _variants_date = pd(r[6])
+    if _variants_date is None and _variants_raw:
+        _variants_date = pd(r[0])  # fallback: поступление
+
     return {
         "поступление": pd(r[0]),
         "статус":      _parse_bool(r[1]),
@@ -141,7 +149,7 @@ def _row_to_order(row, sheet_name):
         "каллиграф":   str(r[3]).strip() if r[3] else "",
         "клиент":      str(r[4]).strip() if r[4] else "",
         "тариф":       str(r[5]).strip().upper() if r[5] else "",
-        "варианты":    pd(r[6]),
+        "варианты":    _variants_date,
         "ос1":         pd(r[7]),
         "правка1":     pd(r[8]),
         "ос2":         pd(r[9]),
@@ -390,7 +398,9 @@ def invalidate_mgmt_cache(mgmt_url):
 
 # ─── Форматирование листа (условное + валидация дат) ─────────────────────────
 
-_DATE_COL_INDICES = [0, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 19, 20, 21, 22]
+# 0-based индексы столбцов с датами (A=0, G=6, H=7, ...)
+# G(6)=варианты включён → date validation + формат dd.mm
+_DATE_COL_INDICES = [0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 19, 20, 21, 22]
 _MAX_ROWS = 500
 _N_COLS   = 24   # A–X
 
@@ -404,7 +414,8 @@ def _build_total_formula(r):
     var = (
         f'IF(G{r}<>"",'
         f'IF(OR(F{r}="E",F{r}="ST",F{r}="E_FAST"),150,'
-        f'IF(OR(F{r}="OPTNEW",F{r}="PRNEW"),500,0)),0)'
+        f'IF(OR(F{r}="OPTNEW",F{r}="PRNEW"),500,'
+        f'IF(F{r}="OPT2",300,0))),0)'
     )
     pravki    = f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})*75'
     obuchen   = f'IF(P{r}<>"",200,0)'
@@ -415,7 +426,8 @@ def _build_total_formula(r):
         f'IF(OR(F{r}="E",F{r}="ST"),100,'
         f'IF(F{r}="E_FAST",150,'
         f'IF(F{r}="OPTNEW",200,'
-        f'IF(F{r}="PRNEW",250,0)))),0)'
+        f'IF(F{r}="PRNEW",250,'
+        f'IF(F{r}="OPT2",150,0))))),0)'
     )
     return f'={var}+{pravki}+{obuchen}+{tar_bonus}+{bonus_bp}'
 
@@ -498,23 +510,35 @@ def _apply_sheet_formatting(sh, ws):
     _with_retry(lambda: sh.batch_update({"requests": fmt_requests}))
     time.sleep(1)
 
-    # Data validation (календарь) на столбцы с датами
+    # Data validation (календарь) + формат dd.mm на столбцы с датами
     val_requests = []
     for col_idx in _DATE_COL_INDICES:
+        date_range = {
+            "sheetId": sid,
+            "startRowIndex": 1,
+            "endRowIndex": _MAX_ROWS + 1,
+            "startColumnIndex": col_idx,
+            "endColumnIndex": col_idx + 1,
+        }
         val_requests.append({
             "setDataValidation": {
-                "range": {
-                    "sheetId": sid,
-                    "startRowIndex": 1,
-                    "endRowIndex": _MAX_ROWS + 1,
-                    "startColumnIndex": col_idx,
-                    "endColumnIndex": col_idx + 1,
-                },
+                "range": date_range,
                 "rule": {
                     "condition": {"type": "DATE_IS_VALID"},
                     "showCustomUi": True,
                     "strict": False,
                 },
+            }
+        })
+        val_requests.append({
+            "repeatCell": {
+                "range": date_range,
+                "cell": {
+                    "userEnteredFormat": {
+                        "numberFormat": {"type": "DATE", "pattern": "dd.mm"}
+                    }
+                },
+                "fields": "userEnteredFormat.numberFormat",
             }
         })
     for i in range(0, len(val_requests), 10):

@@ -41,8 +41,8 @@ SKIP_SHEETS = {
     "Статистика", "Импорт", "Sheet1", "Лист1", "Sheet",
 }
 
-# 0-based индексы столбцов с датами (для снятия валидации)
-DATE_COL_INDICES = [0, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 19, 20, 21, 22]
+# 0-based индексы столбцов с датами (A=0, G=6 варианты, H=7 ОС1, ...)
+DATE_COL_INDICES = [0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 19, 20, 21, 22]
 
 MAX_DATA_ROWS = 500
 
@@ -150,27 +150,38 @@ def apply_conditional_formatting(sh, ws):
 
 def apply_date_validation(sh, ws):
     """
-    Устанавливает data validation типа DATE_IS_VALID с strict=False.
-    - При клике на ячейку появляется выпадающий календарь Google Sheets.
-    - Скопированные данные не блокируются (только мягкое предупреждение).
+    Устанавливает data validation DATE_IS_VALID (календарь) + формат dd.mm
+    на все столбцы с датами.
     """
     sid = ws.id
     requests = []
     for col_idx in DATE_COL_INDICES:
+        date_range = {
+            "sheetId": sid,
+            "startRowIndex": 1,
+            "endRowIndex": MAX_DATA_ROWS + 1,
+            "startColumnIndex": col_idx,
+            "endColumnIndex": col_idx + 1,
+        }
         requests.append({
             "setDataValidation": {
-                "range": {
-                    "sheetId": sid,
-                    "startRowIndex": 1,
-                    "endRowIndex": MAX_DATA_ROWS + 1,
-                    "startColumnIndex": col_idx,
-                    "endColumnIndex": col_idx + 1,
-                },
+                "range": date_range,
                 "rule": {
                     "condition": {"type": "DATE_IS_VALID"},
                     "showCustomUi": True,
-                    "strict": False,   # предупреждение, а не блокировка
+                    "strict": False,
                 },
+            }
+        })
+        requests.append({
+            "repeatCell": {
+                "range": date_range,
+                "cell": {
+                    "userEnteredFormat": {
+                        "numberFormat": {"type": "DATE", "pattern": "dd.mm"}
+                    }
+                },
+                "fields": "userEnteredFormat.numberFormat",
             }
         })
 
@@ -179,7 +190,7 @@ def apply_date_validation(sh, ws):
         _with_retry(lambda b=batch: sh.batch_update({"requests": b}))
         time.sleep(1)
 
-    print("    [OK] Data validation (календарь) установлена на все столбцы с датами")
+    print("    [OK] Data validation (календарь) + формат dd.mm применены ко всем датам")
     time.sleep(1)
 
 
@@ -236,11 +247,12 @@ def add_total_formula(ws):
 
     formulas = []
     for r in range(2, ldr + 1):
-        # Варианты
+        # Варианты: E/ST/E_FAST=150, OPTNEW/PRNEW=500, OPT2=300
         var = (
             f'IF(G{r}<>"",'
             f'IF(OR(F{r}="E",F{r}="ST",F{r}="E_FAST"),150,'
-            f'IF(OR(F{r}="OPTNEW",F{r}="PRNEW"),500,0)),0)'
+            f'IF(OR(F{r}="OPTNEW",F{r}="PRNEW"),500,'
+            f'IF(F{r}="OPT2",300,0))),0)'
         )
         # Правки 1-6 (столбцы I,K,M,O,U,W)
         pravki = f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})*75'
@@ -248,14 +260,15 @@ def add_total_formula(ws):
         obuchen = f'IF(P{r}<>"",200,0)'
         # Тарифный бонус (вместе с вариантами)
         tar_bonus = f'IF(AND(G{r}<>"",OR(F{r}="E_FAST",F{r}="PRNEW")),300,0)'
-        # Бонус без правок: заказ завершён + варианты были сданы + 0 правок
+        # Бонус без правок: E/ST=100, E_FAST=150, OPTNEW=200, PRNEW=250, OPT2=150
         no_pravki_check = f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})=0'
         bonus_bp = (
             f'IF(AND(B{r}=TRUE,G{r}<>"",{no_pravki_check}),'
             f'IF(OR(F{r}="E",F{r}="ST"),100,'
             f'IF(F{r}="E_FAST",150,'
             f'IF(F{r}="OPTNEW",200,'
-            f'IF(F{r}="PRNEW",250,0)))),0)'
+            f'IF(F{r}="PRNEW",250,'
+            f'IF(F{r}="OPT2",150,0))))),0)'
         )
         formula = f'={var}+{pravki}+{obuchen}+{tar_bonus}+{bonus_bp}'
         formulas.append([formula])
