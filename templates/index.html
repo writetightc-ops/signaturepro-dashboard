@@ -98,6 +98,20 @@
         Перенести заказы
       </button>
 
+      <!-- Закрыть период -->
+      <template x-if="mgmtConfigured">
+        <button @click="openClosePeriod()"
+                :disabled="!data || loading"
+                :class="(!data || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-rose-100'"
+                class="flex items-center gap-1.5 text-sm bg-rose-50 text-rose-800 border border-rose-300 rounded-lg px-3 py-1.5 font-medium transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Закрыть период
+        </button>
+      </template>
+
       <!-- Статус загрузки -->
       <div class="flex items-center gap-2 text-xs text-slate-500">
         <template x-if="loading">
@@ -126,12 +140,26 @@
         <!-- Плашка периода -->
         <div class="flex flex-wrap gap-2 items-center mb-4 text-sm">
           <span class="text-slate-500">Период:</span>
-          <span class="font-semibold text-slate-800" x-text="fmtD(dateFrom) + ' — ' + fmtD(dateTo)"></span>
+          <span class="font-semibold text-slate-800" x-text="fmtD(dateFrom) + ' \u2014 ' + fmtD(dateTo)"></span>
+
+          <!-- Бейдж: период зафиксирован -->
+          <template x-if="isPeriodClosed()">
+            <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-green-200">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              Зафиксирован
+            </span>
+          </template>
+
           <span class="text-slate-300">·</span>
           <span class="text-slate-500 text-xs">
             Прочитано листов: <strong x-text="(data.sheets_used||[]).length"></strong>
             <span class="text-slate-400" x-text="'(' + (data.sheets_used||[]).join(', ') + ')'"></span>
           </span>
+          <template x-if="data.rates_source === 'gsheets'">
+            <span class="text-xs text-slate-400 italic">· ставки из таблицы</span>
+          </template>
         </div>
 
         <!-- Сводные карточки (всегда видны) -->
@@ -358,7 +386,7 @@
               </tbody>
             </table>
             <p class="text-xs text-slate-400 mt-2 italic">
-              Тарифный бонус — при завершении заказа (всегда, если > 0). Бонус без правок — при завершении И 0 правок по всему заказу. Менеджер — бонус за каждое завершение в периоде.
+              Тарифный бонус — начисляется вместе с вариантами (когда дата «Варианты» попадает в период). Бонус без правок — при завершении И 0 правок по всему заказу. Менеджер — бонус за каждое завершение в периоде.
             </p>
           </div>
         </details>
@@ -445,6 +473,83 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════ МОДАЛ ЗАКРЫТИЯ ПЕРИОДА ══ -->
+  <div x-show="showClosePeriod" x-cloak
+       class="fixed inset-0 z-50 modal-bg bg-black/40 flex items-center justify-center p-4"
+       @click.self="showClosePeriod=false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md fade-in" @click.stop>
+      <div class="px-6 pt-5 pb-4 border-b border-slate-100">
+        <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+          <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Закрыть период
+        </h3>
+        <p class="text-sm text-slate-500 mt-1">
+          ЗП будет зафиксирована в таблице руководства (лист «История_ЗП»).
+          Повторная фиксация одного и того же периода недоступна.
+        </p>
+      </div>
+
+      <div class="px-6 py-5 space-y-4">
+        <div class="bg-slate-50 rounded-xl px-4 py-3">
+          <div class="text-xs text-slate-500 mb-1">Период</div>
+          <div class="font-semibold text-slate-800" x-text="fmtD(dateFrom) + ' \u2014 ' + fmtD(dateTo)"></div>
+        </div>
+
+        <template x-if="data">
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="bg-blue-50 rounded-lg px-3 py-2">
+              <div class="text-xs text-blue-500">Каллиграфы</div>
+              <div class="font-bold text-blue-800" x-text="fmt(totalCalSalary)"></div>
+            </div>
+            <div class="bg-teal-50 rounded-lg px-3 py-2">
+              <div class="text-xs text-teal-500">Менеджеры</div>
+              <div class="font-bold text-teal-800" x-text="fmt(totalMgrSalary)"></div>
+            </div>
+          </div>
+        </template>
+
+        <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+          <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>После фиксации добавь корректировки (премии, вычеты) вручную в лист «Корректировки» таблицы руководства.</span>
+        </div>
+
+        <template x-if="closeResult">
+          <div :class="closeResult.ok
+                 ? 'bg-green-50 border-green-200 text-green-800'
+                 : 'bg-red-50 border-red-200 text-red-800'"
+               class="rounded-xl border px-4 py-3 text-sm" x-text="closeResult.msg"></div>
+        </template>
+      </div>
+
+      <div class="px-6 pb-5 flex gap-3">
+        <button @click="showClosePeriod=false; closeResult=null"
+                class="flex-1 border border-slate-300 text-slate-700 rounded-xl py-2.5 text-sm font-medium hover:bg-slate-50 transition">
+          Отмена
+        </button>
+        <button @click="doClosePeriod()"
+                :disabled="closingPeriod || isPeriodClosed() || closeResult?.ok"
+                :class="(closingPeriod || isPeriodClosed() || closeResult?.ok)
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  : 'bg-rose-500 hover:bg-rose-600 text-white'"
+                class="flex-1 rounded-xl py-2.5 text-sm font-semibold transition flex items-center justify-center gap-2">
+          <template x-if="closingPeriod">
+            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
+              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          </template>
+          <span x-text="isPeriodClosed() ? '✓ Уже зафиксирован' : (closingPeriod ? 'Фиксирую...' : 'Зафиксировать ЗП')"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════════════════════════════════════════════════════ JS ══ -->
   <script>
     function dashboard() {
@@ -473,6 +578,13 @@
         transferring:   false,
         transferResult: null,
 
+        // Закрытие периода
+        showClosePeriod: false,
+        closingPeriod:   false,
+        closeResult:     null,
+        closedPeriods:   [],
+        mgmtConfigured:  false,
+
         quickBtns: [
           { id: "today",     label: "Сегодня" },
           { id: "week",      label: "Эта неделя" },
@@ -492,6 +604,7 @@
           this.setQuick("month");
           await this.loadMeta();
           await this.fetchData();
+          await this.fetchClosedPeriods();
         },
 
         async loadMeta() {
@@ -506,6 +619,7 @@
         onDateChange() {
           this.quickActive = "";
           this.fetchData();
+          this.fetchClosedPeriods();
         },
 
         async refreshData() {
@@ -513,10 +627,58 @@
           try {
             await fetch("/api/refresh", { method: "POST" });
             await this.fetchData();
+            await this.fetchClosedPeriods();
           } catch(e) {
             this.errorMsg = "Ошибка обновления: " + e.message;
           } finally {
             this.refreshing = false;
+          }
+        },
+
+        async fetchClosedPeriods() {
+          try {
+            const r = await fetch("/api/closed_periods");
+            const d = await r.json();
+            this.closedPeriods  = d.periods || [];
+            this.mgmtConfigured = d.mgmt_configured !== false;
+          } catch(e) {
+            console.warn("Не удалось загрузить закрытые периоды:", e);
+          }
+        },
+
+        isPeriodClosed() {
+          if (!this.dateFrom || !this.dateTo) return false;
+          const sep = " \u2014 ";
+          const p = this.fmtD(this.dateFrom) + sep + this.fmtD(this.dateTo);
+          return this.closedPeriods.includes(p);
+        },
+
+        openClosePeriod() {
+          this.closeResult = null;
+          this.showClosePeriod = true;
+        },
+
+        async doClosePeriod() {
+          if (!this.dateFrom || !this.dateTo) return;
+          this.closingPeriod = true;
+          this.closeResult   = null;
+          try {
+            const r = await fetch("/api/close_period", {
+              method:  "POST",
+              headers: {"Content-Type": "application/json"},
+              body:    JSON.stringify({from: this.dateFrom, to: this.dateTo}),
+            });
+            const d = await r.json();
+            if (d.error) {
+              this.closeResult = {ok: false, msg: "Ошибка: " + d.error};
+            } else {
+              this.closeResult = {ok: true, msg: d.message};
+              await this.fetchClosedPeriods();
+            }
+          } catch(e) {
+            this.closeResult = {ok: false, msg: "Ошибка соединения: " + e.message};
+          } finally {
+            this.closingPeriod = false;
           }
         },
 
@@ -563,6 +725,7 @@
             this.dateFrom = iso(pm); this.dateTo = iso(last);
           }
           this.fetchData();
+          this.fetchClosedPeriods();
         },
 
         // Формат даты: DD.MM.YYYY

@@ -1,9 +1,10 @@
 """
 Скрипт применения правок к Google Sheets:
   1. Условное форматирование по тарифам (зелёный > жёлтый > серый)
-  2. Data validation (тип «Дата») для столбцов с датами
-  3. Заголовки новых столбцов T–W (ОС 5, Правка 5, ОС 6, Правка 6)
-  4. Формула «Бонус» в столбце X
+  2. Снятие data validation с дат (убирает красные уголки)
+  3. Заголовки T-X: ОС 5, Правка 5, ОС 6, Правка 6, Итого ЗП
+  4. Формула "Итого ЗП" в столбце X (варианты + правки + обучение + бонусы)
+  5. Очистка старого столбца Y (если был)
 
 Запуск:
   python setup_google_sheet.py
@@ -40,13 +41,13 @@ SKIP_SHEETS = {
     "Статистика", "Импорт", "Sheet1", "Лист1", "Sheet",
 }
 
-# 0-based индексы столбцов с датами: A(0), H(7), I(8), J(9), K(10),
-#   L(11), M(12), N(13), O(14), P(15), R(17), T(19), U(20), V(21), W(22)
+# 0-based индексы столбцов с датами (для снятия валидации)
 DATE_COL_INDICES = [0, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 19, 20, 21, 22]
 
-MAX_DATA_ROWS = 500   # максимум строк данных на листе
+MAX_DATA_ROWS = 500
 
-NEW_COL_HEADERS = ["ОС 5", "Правка 5", "ОС 6", "Правка 6", "Бонус", "Итого ЗП"]  # T–Y
+# T(19)=ОС 5, U(20)=Правка 5, V(21)=ОС 6, W(22)=Правка 6, X(23)=Итого ЗП
+NEW_COL_HEADERS = ["ОС 5", "Правка 5", "ОС 6", "Правка 6", "Итого ЗП"]  # T-X
 
 
 # ─── Подключение ──────────────────────────────────────────────────────────────
@@ -74,10 +75,7 @@ def _with_retry(fn, max_retries=6):
 def get_client():
     creds_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), CREDENTIALS_FILE)
     if not os.path.exists(creds_path):
-        raise FileNotFoundError(
-            f"Файл учётных данных не найден: {creds_path}\n"
-            "Скачай из Google Cloud Console → Service Account → Keys → JSON"
-        )
+        raise FileNotFoundError(f"Файл учётных данных не найден: {creds_path}")
     creds = Credentials.from_service_account_file(creds_path, scopes=SCOPES)
     return gspread.authorize(creds)
 
@@ -89,62 +87,52 @@ def _rgb(r, g, b):
 
 
 def apply_conditional_formatting(sh, ws):
-    """
-    Добавляет три правила условного форматирования.
-    Порядок (index) определяет приоритет — меньший индекс = выше приоритет.
-    """
     sid = ws.id
     grid = {
         "sheetId": sid,
-        "startRowIndex": 1,             # строка 2 (пропускаем заголовок)
+        "startRowIndex": 1,
         "endRowIndex": MAX_DATA_ROWS + 1,
-        "startColumnIndex": 0,          # A
-        "endColumnIndex": 24,           # A–X
+        "startColumnIndex": 0,
+        "endColumnIndex": 24,  # A-X
     }
 
     requests = [
-        # Приоритет 0 — Статус = TRUE → зелёный (#C6EFCE)
+        # Приоритет 0: Статус TRUE -> зелёный
         {
             "addConditionalFormatRule": {
                 "rule": {
                     "ranges": [grid],
                     "booleanRule": {
-                        "condition": {
-                            "type": "CUSTOM_FORMULA",
-                            "values": [{"userEnteredValue": "=$B2=TRUE"}],
-                        },
+                        "condition": {"type": "CUSTOM_FORMULA",
+                                      "values": [{"userEnteredValue": "=$B2=TRUE"}]},
                         "format": {"backgroundColor": _rgb(198, 239, 206)},
                     },
                 },
                 "index": 0,
             }
         },
-        # Приоритет 1 — Тариф E / ST / E_FAST → светло-жёлтый (#FFFFCC)
+        # Приоритет 1: E / ST / E_FAST -> светло-жёлтый
         {
             "addConditionalFormatRule": {
                 "rule": {
                     "ranges": [grid],
                     "booleanRule": {
-                        "condition": {
-                            "type": "CUSTOM_FORMULA",
-                            "values": [{"userEnteredValue": '=OR($F2="E",$F2="ST",$F2="E_FAST")'}],
-                        },
+                        "condition": {"type": "CUSTOM_FORMULA",
+                                      "values": [{"userEnteredValue": '=OR($F2="E",$F2="ST",$F2="E_FAST")'}]},
                         "format": {"backgroundColor": _rgb(255, 255, 204)},
                     },
                 },
                 "index": 1,
             }
         },
-        # Приоритет 2 — Тариф OPTNEW / OPT2 / PRNEW → светло-серый (#F0F0F0)
+        # Приоритет 2: OPTNEW / OPT2 / PRNEW -> светло-серый
         {
             "addConditionalFormatRule": {
                 "rule": {
                     "ranges": [grid],
                     "booleanRule": {
-                        "condition": {
-                            "type": "CUSTOM_FORMULA",
-                            "values": [{"userEnteredValue": '=OR($F2="OPTNEW",$F2="OPT2",$F2="PRNEW")'}],
-                        },
+                        "condition": {"type": "CUSTOM_FORMULA",
+                                      "values": [{"userEnteredValue": '=OR($F2="OPTNEW",$F2="OPT2",$F2="PRNEW")'}]},
                         "format": {"backgroundColor": _rgb(240, 240, 240)},
                     },
                 },
@@ -158,10 +146,14 @@ def apply_conditional_formatting(sh, ws):
     time.sleep(2)
 
 
-# ─── 2. Data validation (дата) ────────────────────────────────────────────────
+# ─── 2. Data validation на датах: выпадающий календарь, без жёсткой блокировки ─
 
 def apply_date_validation(sh, ws):
-    """Устанавливает проверку данных «дата» для всех столбцов с датами."""
+    """
+    Устанавливает data validation типа DATE_IS_VALID с strict=False.
+    - При клике на ячейку появляется выпадающий календарь Google Sheets.
+    - Скопированные данные не блокируются (только мягкое предупреждение).
+    """
     sid = ws.id
     requests = []
     for col_idx in DATE_COL_INDICES:
@@ -176,59 +168,46 @@ def apply_date_validation(sh, ws):
                 },
                 "rule": {
                     "condition": {"type": "DATE_IS_VALID"},
-                    "inputMessage": "Выберите дату",
-                    "strict": False,
                     "showCustomUi": True,
+                    "strict": False,   # предупреждение, а не блокировка
                 },
             }
         })
 
-    # Разбиваем на батчи по 10, чтобы не переполнить квоту
     for i in range(0, len(requests), 10):
         batch = requests[i:i + 10]
         _with_retry(lambda b=batch: sh.batch_update({"requests": b}))
         time.sleep(1)
 
-    print("    [OK] Data validation (дата) применена")
+    print("    [OK] Data validation (календарь) установлена на все столбцы с датами")
     time.sleep(1)
 
 
-# ─── 3 & 4. Новые столбцы T–X ────────────────────────────────────────────────
-
-def _col_letter(idx_0based):
-    """Число 0-based → буква столбца (0=A, 25=Z, 26=AA, ...)."""
-    result = ""
-    n = idx_0based
-    while True:
-        result = chr(ord("A") + n % 26) + result
-        n = n // 26 - 1
-        if n < 0:
-            break
-    return result
-
+# ─── 3. Заголовки T-X ────────────────────────────────────────────────────────
 
 def add_new_column_headers(ws):
-    """Прописывает заголовки T1:Y1 если их ещё нет."""
+    """Прописывает заголовки T1:X1."""
     headers = ws.row_values(1)
-    while len(headers) < 25:
+    while len(headers) < 24:
         headers.append("")
 
     needs_update = any(headers[19 + i] != name for i, name in enumerate(NEW_COL_HEADERS))
 
     if needs_update:
         _with_retry(lambda: ws.update(
-            range_name="T1:Y1",
+            range_name="T1:X1",
             values=[NEW_COL_HEADERS],
             value_input_option="USER_ENTERED",
         ))
-        print("    [OK] Заголовки T-Y обновлены")
+        print("    [OK] Заголовки T-X обновлены")
     else:
-        print("    [-] Заголовки T-Y уже установлены")
+        print("    [-] Заголовки T-X уже установлены")
     time.sleep(1)
 
 
+# ─── 4. Формула "Итого ЗП" в столбце X ───────────────────────────────────────
+
 def _last_data_row(ws):
-    """Возвращает номер последней строки с данными (>= 2)."""
     all_values = _with_retry(ws.get_all_values)
     data_rows = [
         r for r in all_values[1:]
@@ -237,54 +216,18 @@ def _last_data_row(ws):
     return 1 + len(data_rows) if data_rows else 0
 
 
-def add_bonus_formula(ws):
-    """
-    Столбец X «Бонус»: бонус без правок — выплачивается ТОЛЬКО если
-    заказ завершён (B=TRUE) И в строке нет ни одной правки (I,K,M,O,U,W пусты).
-    Значения по тарифу: E/ST=100, E_FAST=150, OPTNEW=200, PRNEW=250.
-    """
-    ldr = _last_data_row(ws)
-    if ldr < 2:
-        print("    [-] Строк с данными нет - формула бонуса не добавляется")
-        return
-
-    formulas = []
-    for row_num in range(2, ldr + 1):
-        # Правки 1–6 находятся в столбцах I(9), K(11), M(13), O(15), U(21), W(23)
-        has_no_правки = (
-            f'COUNTA(I{row_num},K{row_num},M{row_num},'
-            f'O{row_num},U{row_num},W{row_num})=0'
-        )
-        f = (
-            f'=IF(AND(B{row_num}=TRUE,{has_no_правки}),'
-            f'IF(OR(F{row_num}="E",F{row_num}="ST"),100,'
-            f'IF(F{row_num}="E_FAST",150,'
-            f'IF(F{row_num}="OPTNEW",200,'
-            f'IF(F{row_num}="PRNEW",250,0)))),0)'
-        )
-        formulas.append([f])
-
-    end_x = ldr  # захватываем в замыкание
-    _with_retry(lambda: ws.update(
-        range_name=f"X2:X{end_x}",
-        values=formulas,
-        value_input_option="USER_ENTERED",
-    ))
-    print(f"    [OK] Формула бонуса (бонус без правок) добавлена в X2:X{ldr}")
-    time.sleep(1)
-
-
 def add_total_formula(ws):
     """
-    Столбец Y «Итого ЗП»: полная сумма заработка каллиграфа по строке.
-    Включает: варианты + правки×75 + обучение + тарифный_бонус + бонус_без_правок.
+    Столбец X "Итого ЗП" — полная сумма заработка каллиграфа по строке:
+      варианты + правки*75 + обучение + тарифный_бонус + бонус_без_правок
 
     Тарифные ставки:
-      Варианты : E/ST/E_FAST=150, OPTNEW/PRNEW=500
-      Правки   : 75 за каждую (I,K,M,O,U,W)
-      Обучение : 200 (если P заполнена)
-      Тарифный бонус: E_FAST/PRNEW=300 при завершении
-      Бонус без правок: формула из X
+      Варианты    : E/ST/E_FAST=150, OPTNEW/PRNEW=500
+      Правки      : 75 за каждую (I,K,M,O,U,W)
+      Обучение    : 200 (если P заполнена)
+      Тарифный бонус: E_FAST/PRNEW=300 когда варианты готовы (G заполнена)
+      Бонус без правок: только если B=TRUE И 0 правок (I,K,M,O,U,W пусты)
+        E/ST=100, E_FAST=150, OPTNEW=200, PRNEW=250
     """
     ldr = _last_data_row(ws)
     if ldr < 2:
@@ -292,35 +235,66 @@ def add_total_formula(ws):
         return
 
     formulas = []
-    for row_num in range(2, ldr + 1):
-        r = row_num
+    for r in range(2, ldr + 1):
         # Варианты
         var = (
             f'IF(G{r}<>"",'
             f'IF(OR(F{r}="E",F{r}="ST",F{r}="E_FAST"),150,'
             f'IF(OR(F{r}="OPTNEW",F{r}="PRNEW"),500,0)),0)'
         )
-        # Правки 1–6
-        правки = f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})*75'
+        # Правки 1-6 (столбцы I,K,M,O,U,W)
+        pravki = f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})*75'
         # Обучение
-        обучение = f'IF(P{r}<>"",200,0)'
-        # Тарифный бонус (только при завершении)
-        тар_бонус = (
-            f'IF(AND(B{r}=TRUE,OR(F{r}="E_FAST",F{r}="PRNEW")),300,0)'
+        obuchen = f'IF(P{r}<>"",200,0)'
+        # Тарифный бонус (вместе с вариантами)
+        tar_bonus = f'IF(AND(G{r}<>"",OR(F{r}="E_FAST",F{r}="PRNEW")),300,0)'
+        # Бонус без правок: заказ завершён + варианты были сданы + 0 правок
+        no_pravki_check = f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})=0'
+        bonus_bp = (
+            f'IF(AND(B{r}=TRUE,G{r}<>"",{no_pravki_check}),'
+            f'IF(OR(F{r}="E",F{r}="ST"),100,'
+            f'IF(F{r}="E_FAST",150,'
+            f'IF(F{r}="OPTNEW",200,'
+            f'IF(F{r}="PRNEW",250,0)))),0)'
         )
-        # Бонус без правок — ссылаемся на уже рассчитанный X
-        бонус_бп = f'X{r}'
+        formula = f'={var}+{pravki}+{obuchen}+{tar_bonus}+{bonus_bp}'
+        formulas.append([formula])
 
-        f = f'={var}+{правки}+{обучение}+{тар_бонус}+{бонус_бп}'
-        formulas.append([f])
-
-    end_y = ldr  # захватываем в замыкание
+    end_x = ldr
     _with_retry(lambda: ws.update(
-        range_name=f"Y2:Y{end_y}",
+        range_name=f"X2:X{end_x}",
         values=formulas,
         value_input_option="USER_ENTERED",
     ))
-    print(f"    [OK] Формула \"Итого ЗП\" добавлена в Y2:Y{ldr}")
+    print(f"    [OK] Формула \"Итого ЗП\" добавлена в X2:X{ldr}")
+    time.sleep(1)
+
+
+# ─── 5. Очистка старого столбца Y ────────────────────────────────────────────
+
+def clear_old_y_column(ws):
+    """Очищает столбец Y (там был старый «Итого ЗП» или «Бонус»)."""
+    ldr = _last_data_row(ws)
+    if ldr < 1:
+        return
+
+    empty_header = [[""]]
+    _with_retry(lambda: ws.update(
+        range_name="Y1:Y1",
+        values=empty_header,
+        value_input_option="USER_ENTERED",
+    ))
+
+    if ldr >= 2:
+        empty_data = [[""] for _ in range(2, ldr + 1)]
+        end_y = ldr
+        _with_retry(lambda: ws.update(
+            range_name=f"Y2:Y{end_y}",
+            values=empty_data,
+            value_input_option="USER_ENTERED",
+        ))
+
+    print("    [OK] Старый столбец Y очищен")
     time.sleep(1)
 
 
@@ -335,7 +309,7 @@ def main():
     month_sheets = [ws for ws in sh.worksheets() if ws.title not in SKIP_SHEETS]
 
     if not month_sheets:
-        print("Не найдено листов с заказами (все листы в SKIP_SHEETS).")
+        print("Не найдено листов с заказами.")
         return
 
     print(f"Найдено листов для обработки: {len(month_sheets)}")
@@ -345,17 +319,17 @@ def main():
         # 1. Условное форматирование
         apply_conditional_formatting(sh, ws)
 
-        # 2. Data validation для дат
+        # 2. Data validation с календарём (strict=False — без жёсткой блокировки)
         apply_date_validation(sh, ws)
 
-        # 3. Заголовки T–X
+        # 3. Заголовки T-X
         add_new_column_headers(ws)
 
-        # 4. Формула бонуса в X
-        add_bonus_formula(ws)
-
-        # 5. Формула «Итого ЗП» в Y
+        # 4. Формула "Итого ЗП" в X (без отдельного "Бонус")
         add_total_formula(ws)
+
+        # 5. Очистить старый Y
+        clear_old_y_column(ws)
 
     print("\n[DONE] Все правки применены к Google Sheets!")
     print("   Обнови страницу таблицы в браузере чтобы увидеть изменения.")
