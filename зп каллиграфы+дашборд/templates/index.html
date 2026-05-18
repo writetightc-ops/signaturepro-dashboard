@@ -98,17 +98,15 @@
         Перенести заказы
       </button>
 
-      <!-- Закрыть период -->
+      <!-- Внести ЗП в историю -->
       <template x-if="mgmtConfigured">
-        <button @click="openClosePeriod()"
-                :disabled="!data || loading"
-                :class="(!data || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-rose-100'"
-                class="flex items-center gap-1.5 text-sm bg-rose-50 text-rose-800 border border-rose-300 rounded-lg px-3 py-1.5 font-medium transition">
+        <button @click="openEnterSalary()"
+                class="flex items-center gap-1.5 text-sm bg-violet-50 text-violet-800 border border-violet-300 hover:bg-violet-100 rounded-lg px-3 py-1.5 font-medium transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          Закрыть период
+          Внести ЗП
         </button>
       </template>
 
@@ -473,83 +471,125 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════ МОДАЛ ЗАКРЫТИЯ ПЕРИОДА ══ -->
-  <div x-show="showClosePeriod" x-cloak
-       class="fixed inset-0 z-50 modal-bg bg-black/40 flex items-center justify-center p-4"
-       @click.self="showClosePeriod=false">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md fade-in" @click.stop>
-      <div class="px-6 pt-5 pb-4 border-b border-slate-100">
+  <!-- ══════════════════════════════ МОДАЛ ВНЕСЕНИЯ ЗП ══ -->
+<div x-show="showEnterSalary" x-cloak class="fixed inset-0 z-50 modal-bg bg-black/40 flex items-center justify-center p-4" @click.self="showEnterSalary=false">
+<div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg fade-in max-h-[90vh] flex flex-col" @click.stop>
+<div class="px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
         <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
-          <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          Закрыть период
+          Внести ЗП
         </h3>
         <p class="text-sm text-slate-500 mt-1">
-          ЗП будет зафиксирована в таблице руководства (лист «История_ЗП»).
-          Повторная фиксация одного и того же периода недоступна.
+          Выбери период, проверь расчёт и запиши суммы в лист «История_ЗП» таблицы руководства.
+          Один и тот же период нельзя внести дважды.
         </p>
-      </div>
-
-      <div class="px-6 py-5 space-y-4">
-        <div class="bg-slate-50 rounded-xl px-4 py-3">
-          <div class="text-xs text-slate-500 mb-1">Период</div>
-          <div class="font-semibold text-slate-800" x-text="fmtD(dateFrom) + ' \u2014 ' + fmtD(dateTo)"></div>
-        </div>
-
-        <template x-if="data">
-          <div class="grid grid-cols-2 gap-2 text-sm">
-            <div class="bg-blue-50 rounded-lg px-3 py-2">
-              <div class="text-xs text-blue-500">Каллиграфы</div>
-              <div class="font-bold text-blue-800" x-text="fmt(totalCalSalary)"></div>
-            </div>
-            <div class="bg-teal-50 rounded-lg px-3 py-2">
-              <div class="text-xs text-teal-500">Менеджеры</div>
-              <div class="font-bold text-teal-800" x-text="fmt(totalMgrSalary)"></div>
-            </div>
-          </div>
+</div>
+<div class="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+<div class="flex flex-wrap items-center gap-3">
+<div>
+            <label class="text-xs text-slate-500 font-medium block mb-1">С:</label>
+            <input type="date" x-model="enterFrom" @change="onEnterPeriodChange()"
+                   class="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 w-36">
+</div>
+<div>
+            <label class="text-xs text-slate-500 font-medium block mb-1">По:</label>
+            <input type="date" x-model="enterTo" @change="onEnterPeriodChange()"
+                   class="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 w-36">
+</div>
+          <button @click="fetchEnterPreview()"
+                  :disabled="enterPreviewLoading || !enterFrom || !enterTo"
+                  :class="enterPreviewLoading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-violet-100'"
+                  class="self-end text-sm bg-violet-50 text-violet-800 border border-violet-300 rounded-lg px-3 py-1.5 font-medium transition">
+            <span x-text="enterPreviewLoading ? 'Считаю...' : 'Рассчитать'"></span>
+          </button>
+</div>
+        <template x-if="isEnterPeriodClosed()">
+<div class="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800">
+            <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            Этот период уже есть в «История_ЗП»
+</div>
         </template>
-
-        <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+        <template x-if="enterPreviewError">
+<div class="bg-red-50 border border-red-200 text-red-800 rounded-xl px-4 py-3 text-sm" x-text="enterPreviewError">
+</div>
+        </template>
+        <template x-if="enterPreview && !enterPreviewError">
+<div class="grid grid-cols-2 gap-2 text-sm">
+<div class="bg-blue-50 rounded-lg px-3 py-2">
+<div class="text-xs text-blue-500">Каллиграфы</div>
+<div class="font-bold text-blue-800" x-text="fmt(enterTotalCal)"></div>
+</div>
+<div class="bg-teal-50 rounded-lg px-3 py-2">
+<div class="text-xs text-teal-500">Менеджеры</div>
+<div class="font-bold text-teal-800" x-text="fmt(enterTotalMgr)"></div>
+</div>
+</div>
+<div class="border border-slate-200 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
+            <table class="w-full text-xs">
+              <thead><tr class="bg-slate-50 text-slate-500 sticky top-0">
+                  <th class="text-left p-2 font-medium">Сотрудник</th>
+                  <th class="p-2 font-medium">Роль</th>
+                  <th class="text-right p-2 font-medium">К выплате</th>
+                </tr></thead>
+              <tbody>
+                <template x-for="emp in enterEmployees" :key="emp.name">
+                  <tr class="border-b border-slate-100 last:border-0">
+                    <td class="p-2 text-slate-800" x-text="emp.name"></td>
+                    <td class="p-2 text-slate-500" x-text="emp.role"></td>
+                    <td class="p-2 text-right font-semibold" x-text="fmt(emp.total)"></td>
+                  </tr>
+                </template>
+                <template x-if="!enterEmployees.length">
+                  <tr><td colspan="3" class="p-3 text-center text-slate-400 italic">Нет начислений</td></tr>
+                </template>
+              </tbody>
+              <tfoot x-show="enterEmployees.length">
+                <tr class="bg-slate-50 font-semibold text-slate-700">
+                  <td colspan="2" class="p-2 text-right">Итого:</td>
+                  <td class="p-2 text-right" x-text="fmt(enterGrandTotal)"></td>
+                </tr>
+              </tfoot>
+            </table>
+</div>
+        </template>
+<div class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
           <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          <span>После фиксации добавь корректировки (премии, вычеты) вручную в лист «Корректировки» таблицы руководства.</span>
-        </div>
-
-        <template x-if="closeResult">
-          <div :class="closeResult.ok
-                 ? 'bg-green-50 border-green-200 text-green-800'
-                 : 'bg-red-50 border-red-200 text-red-800'"
-               class="rounded-xl border px-4 py-3 text-sm" x-text="closeResult.msg"></div>
+          <span>Премии и вычеты добавляй вручную в лист «Корректировки».</span>
+</div>
+        <template x-if="enterResult">
+<div :class="enterResult.ok ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'" class="rounded-xl border px-4 py-3 text-sm" x-text="enterResult.msg">
+</div>
         </template>
-      </div>
-
-      <div class="px-6 pb-5 flex gap-3">
-        <button @click="showClosePeriod=false; closeResult=null"
+</div>
+<div class="px-6 pb-5 flex gap-3 shrink-0">
+        <button @click="showEnterSalary=false; enterResult=null"
                 class="flex-1 border border-slate-300 text-slate-700 rounded-xl py-2.5 text-sm font-medium hover:bg-slate-50 transition">
           Отмена
         </button>
-        <button @click="doClosePeriod()"
-                :disabled="closingPeriod || isPeriodClosed() || closeResult?.ok"
-                :class="(closingPeriod || isPeriodClosed() || closeResult?.ok)
+        <button @click="doEnterSalary()"
+                :disabled="enteringSalary || isEnterPeriodClosed() || enterResult?.ok || !enterPreview || !enterEmployees.length"
+                :class="(enteringSalary || isEnterPeriodClosed() || enterResult?.ok || !enterPreview || !enterEmployees.length)
                   ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  : 'bg-rose-500 hover:bg-rose-600 text-white'"
+                  : 'bg-violet-600 hover:bg-violet-700 text-white'"
                 class="flex-1 rounded-xl py-2.5 text-sm font-semibold transition flex items-center justify-center gap-2">
-          <template x-if="closingPeriod">
+          <template x-if="enteringSalary">
             <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
               <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
             </svg>
           </template>
-          <span x-text="isPeriodClosed() ? '✓ Уже зафиксирован' : (closingPeriod ? 'Фиксирую...' : 'Зафиксировать ЗП')"></span>
+          <span x-text="isEnterPeriodClosed() ? 'Уже внесено' : (enteringSalary ? 'Вношу...' : 'Внести в историю')"></span>
         </button>
-      </div>
-    </div>
-  </div>
-
+</div>
+</div>
+</div>
   <!-- ═══════════════════════════════════════════════════════ JS ══ -->
   <script>
     function dashboard() {
@@ -578,12 +618,17 @@
         transferring:   false,
         transferResult: null,
 
-        // Закрытие периода
-        showClosePeriod: false,
-        closingPeriod:   false,
-        closeResult:     null,
-        closedPeriods:   [],
-        mgmtConfigured:  false,
+        // Внесение ЗП в историю
+        showEnterSalary:     false,
+        enteringSalary:      false,
+        enterResult:         null,
+        enterFrom:           "",
+        enterTo:             "",
+        enterPreview:        null,
+        enterPreviewLoading: false,
+        enterPreviewError:   "",
+        closedPeriods:       [],
+        mgmtConfigured:      false,
 
         quickBtns: [
           { id: "today",     label: "Сегодня" },
@@ -653,33 +698,102 @@
           return this.closedPeriods.includes(p);
         },
 
-        openClosePeriod() {
-          this.closeResult = null;
-          this.showClosePeriod = true;
+        openEnterSalary() {
+          this.enterResult         = null;
+          this.enterPreview       = null;
+          this.enterPreviewError  = "";
+          this.enterFrom          = this.dateFrom;
+          this.enterTo            = this.dateTo;
+          this.showEnterSalary    = true;
+          if (this.enterFrom && this.enterTo) {
+            this.fetchEnterPreview();
+          }
         },
 
-        async doClosePeriod() {
-          if (!this.dateFrom || !this.dateTo) return;
-          this.closingPeriod = true;
-          this.closeResult   = null;
+        onEnterPeriodChange() {
+          this.enterPreview      = null;
+          this.enterPreviewError = "";
+          this.enterResult       = null;
+          if (this.enterFrom && this.enterTo && this.enterFrom <= this.enterTo) {
+            this.fetchEnterPreview();
+          }
+        },
+
+        isEnterPeriodClosed() {
+          if (!this.enterFrom || !this.enterTo) return false;
+          const sep = " \u2014 ";
+          const p = this.fmtD(this.enterFrom) + sep + this.fmtD(this.enterTo);
+          return this.closedPeriods.includes(p);
+        },
+
+        async fetchEnterPreview() {
+          if (!this.enterFrom || !this.enterTo) return;
+          if (this.enterFrom > this.enterTo) {
+            this.enterPreviewError = "Дата «с» не может быть позже даты «по»";
+            this.enterPreview = null;
+            return;
+          }
+          this.enterPreviewLoading = true;
+          this.enterPreviewError   = "";
           try {
-            const r = await fetch("/api/close_period", {
+            const r = await fetch(`/api/salary?from=${this.enterFrom}&to=${this.enterTo}`);
+            const d = await r.json();
+            if (d.error) {
+              this.enterPreviewError = d.error;
+              this.enterPreview = null;
+            } else if (!Object.keys(d.employees || {}).length) {
+              this.enterPreviewError = "Нет начислений за выбранный период";
+              this.enterPreview = null;
+            } else {
+              this.enterPreview = d;
+            }
+          } catch(e) {
+            this.enterPreviewError = "Ошибка соединения: " + e.message;
+            this.enterPreview = null;
+          } finally {
+            this.enterPreviewLoading = false;
+          }
+        },
+
+        async doEnterSalary() {
+          if (!this.enterFrom || !this.enterTo || !this.enterPreview) return;
+          this.enteringSalary = true;
+          this.enterResult    = null;
+          try {
+            const r = await fetch("/api/enter_salary", {
               method:  "POST",
               headers: {"Content-Type": "application/json"},
-              body:    JSON.stringify({from: this.dateFrom, to: this.dateTo}),
+              body:    JSON.stringify({from: this.enterFrom, to: this.enterTo}),
             });
             const d = await r.json();
             if (d.error) {
-              this.closeResult = {ok: false, msg: "Ошибка: " + d.error};
+              this.enterResult = {ok: false, msg: "Ошибка: " + d.error};
             } else {
-              this.closeResult = {ok: true, msg: d.message};
+              this.enterResult = {ok: true, msg: d.message};
               await this.fetchClosedPeriods();
+              if (this.enterFrom === this.dateFrom && this.enterTo === this.dateTo) {
+                await this.fetchData();
+              }
             }
           } catch(e) {
-            this.closeResult = {ok: false, msg: "Ошибка соединения: " + e.message};
+            this.enterResult = {ok: false, msg: "Ошибка соединения: " + e.message};
           } finally {
-            this.closingPeriod = false;
+            this.enteringSalary = false;
           }
+        },
+
+        get enterEmployees() {
+          if (!this.enterPreview?.employees) return [];
+          return Object.values(this.enterPreview.employees).sort((a, b) => b.total - a.total);
+        },
+        get enterTotalCal() {
+          return this.enterEmployees.filter(e => e.role === "Каллиграф").reduce((s, e) => s + e.total, 0);
+        },
+        get enterTotalMgr() {
+          return this.enterEmployees.filter(e => e.role === "Менеджер").reduce((s, e) => s + e.total, 0);
+        },
+        get enterGrandTotal() {
+          return this.enterEmployees.reduce((s, e) => s + e.total, 0);
         },
 
         async fetchData() {

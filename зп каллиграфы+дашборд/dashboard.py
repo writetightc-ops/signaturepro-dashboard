@@ -407,10 +407,11 @@ def api_closed_periods():
         return jsonify({"periods": [], "mgmt_configured": True, "error": str(e)})
 
 
+@app.route("/api/enter_salary", methods=["POST"])
 @app.route("/api/close_period", methods=["POST"])
-def api_close_period():
+def api_enter_salary():
     """
-    Фиксирует ЗП за период в таблице руководства (лист История_ЗП).
+    Рассчитывает и вносит ЗП за период в лист «История_ЗП» таблицы руководства.
     POST body: {"from": "2026-05-01", "to": "2026-05-31"}
     """
     try:
@@ -446,13 +447,15 @@ def api_close_period():
             date_from, date_to,
             result["employees"],
         )
+        _invalidate_rates_cache()
+        _gs.invalidate_mgmt_cache(MGMT_SHEETS_URL)
 
         period_str = f"{date_from.strftime('%d.%m.%Y')} \u2014 {date_to.strftime('%d.%m.%Y')}"
         return jsonify({
             "ok":              True,
             "period":          period_str,
             "employees_count": count,
-            "message":         f"ЗП зафиксирована: {count} сотрудников · период «{period_str}»",
+            "message":         f"ЗП внесена в историю: {count} сотрудников · период «{period_str}»",
         })
 
     except ValueError as e:
