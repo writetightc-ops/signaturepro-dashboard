@@ -405,9 +405,9 @@
   </main>
 
   <!-- ═══════════════════════════════════════════ МОДАЛ ПЕРЕНОСА ══ -->
-  <div x-show="showTransfer" x-cloak
-       class="fixed inset-0 z-50 modal-bg bg-black/40 flex items-center justify-center p-4"
-       @click.self="showTransfer=false">
+  <template x-if="showTransfer">
+  <div class="fixed inset-0 z-50 modal-bg bg-black/40 flex items-center justify-center p-4"
+       @click.self="showTransfer=false" x-cloak>
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md fade-in" @click.stop>
       <div class="px-6 pt-5 pb-4 border-b border-slate-100">
         <h3 class="font-bold text-lg text-slate-800">Перенос незавершённых заказов</h3>
@@ -472,11 +472,12 @@
       </div>
     </div>
   </div>
+  </template>
 
   <!-- ══════════════════════════════ МОДАЛ ЗАКРЫТИЯ ПЕРИОДА ══ -->
-  <div x-show="showClosePeriod" x-cloak
-       class="fixed inset-0 z-50 modal-bg bg-black/40 flex items-center justify-center p-4"
-       @click.self="showClosePeriod=false">
+  <template x-if="showClosePeriod">
+  <div class="fixed inset-0 z-50 modal-bg bg-black/40 flex items-center justify-center p-4"
+       @click.self="showClosePeriod=false" x-cloak>
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md fade-in" @click.stop>
       <div class="px-6 pt-5 pb-4 border-b border-slate-100">
         <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
@@ -549,6 +550,7 @@
       </div>
     </div>
   </div>
+  </template>
 
   <!-- ═══════════════════════════════════════════════════════ JS ══ -->
   <script>
