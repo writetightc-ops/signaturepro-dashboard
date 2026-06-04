@@ -534,8 +534,8 @@
           Отмена
         </button>
         <button @click="doClosePeriod()"
-                :disabled="closingPeriod || isPeriodClosed() || closeResult?.ok"
-                :class="(closingPeriod || isPeriodClosed() || closeResult?.ok)
+                :disabled="!!(closingPeriod || isPeriodClosed() || closeResult?.ok)"
+                :class="!!(closingPeriod || isPeriodClosed() || closeResult?.ok)
                   ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   : 'bg-rose-500 hover:bg-rose-600 text-white'"
                 class="flex-1 rounded-xl py-2.5 text-sm font-semibold transition flex items-center justify-center gap-2">
