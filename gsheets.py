@@ -546,6 +546,25 @@ def _apply_sheet_formatting(sh, ws):
         _with_retry(lambda b=batch: sh.batch_update({"requests": b}))
         time.sleep(1)
 
+    # Чекбокс (столбец B — «Статус»)
+    _with_retry(lambda: sh.batch_update({"requests": [{
+        "setDataValidation": {
+            "range": {
+                "sheetId": sid,
+                "startRowIndex": 1,
+                "endRowIndex": _MAX_ROWS + 1,
+                "startColumnIndex": 1,
+                "endColumnIndex": 2,
+            },
+            "rule": {
+                "condition": {"type": "BOOLEAN"},
+                "showCustomUi": True,
+                "strict": True,
+            },
+        }
+    }]}))
+    time.sleep(1)
+
     # Формула «Итого ЗП» в столбце X
     _apply_total_formula(ws)
 
@@ -644,12 +663,21 @@ def transfer_orders(spreadsheet_url, credentials_file, from_sheet_name, to_sheet
     _apply_sheet_formatting(sh, ws_to)
     time.sleep(1)
 
-    # Перезаписываем исходный лист (оставляем только завершённые + заголовок)
-    _with_retry(lambda: ws_from.clear())
-    time.sleep(1)
-    if rows_to_keep:
-        _with_retry(lambda: ws_from.update(
-            range_name="A1", values=rows_to_keep, value_input_option="USER_ENTERED"))
+    # Удаляем перенесённые строки из исходного листа (сохраняем форматирование оставшихся)
+    delete_requests = []
+    for row_idx in sorted(move_row_indices, reverse=True):
+        delete_requests.append({
+            "deleteDimension": {
+                "range": {
+                    "sheetId": from_id,
+                    "dimension": "ROWS",
+                    "startIndex": row_idx,
+                    "endIndex": row_idx + 1,
+                }
+            }
+        })
+    if delete_requests:
+        _with_retry(lambda: sh.batch_update({"requests": delete_requests}))
         time.sleep(1)
         # Восстанавливаем формулу «Итого ЗП» в исходном листе
         _apply_total_formula(ws_from)
