@@ -22,6 +22,8 @@
     .tag-EFAST  { background:#fef3c7; color:#92400e; }
     .tag-OPTNEW { background:#d1fae5; color:#065f46; }
     .tag-PRNEW  { background:#fce7f3; color:#9d174d; }
+    .tag-DOP_OBUCHENIE { background:#fef9c3; color:#854d0e; }
+    .tag-DOP_PODPIS   { background:#cffafe; color:#155e75; }
     .tag-other  { background:#f3f4f6; color:#374151; }
     input[type=date]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:.7; }
     .modal-bg   { backdrop-filter: blur(2px); }
@@ -386,7 +388,7 @@
               </tbody>
             </table>
             <p class="text-xs text-slate-400 mt-2 italic">
-              Тарифный бонус — начисляется вместе с вариантами (когда дата «Варианты» попадает в период). Бонус без правок — при завершении И 0 правок по всему заказу. Менеджер — бонус за каждое завершение в периоде.
+              Тарифный бонус — начисляется вместе с вариантами (когда дата «Варианты» попадает в период) каллиграфу, который готовил варианты. Бонус без правок — при завершении заказа (галка в столбце B И дата «Завершение» в периоде) и 0 правок по всему заказу. Менеджер — бонус при завершении заказа (B=TRUE), один раз на клиента; по тарифу «ДОП_ОБУЧЕНИЕ» менеджер бонус не получает.
             </p>
           </div>
         </details>
@@ -412,8 +414,7 @@
       <div class="px-6 pt-5 pb-4 border-b border-slate-100">
         <h3 class="font-bold text-lg text-slate-800">Перенос незавершённых заказов</h3>
         <p class="text-sm text-slate-500 mt-1">
-          Заказы без даты завершения переедут на новый лист. Все даты этапов сохраняются — 
-          ЗП по-прежнему считается по всем листам.
+          Заказы без галки в столбце B (Статус) переедут на новый лист. Заказы с галкой (завершённые) остаются. Все даты этапов сохраняются — ЗП по-прежнему считается по всем листам.
         </p>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -598,8 +599,10 @@
           {t:"E",      v:150, o:200, b:100, tb:  0, p:75, m:200},
           {t:"ST",     v:150, o:200, b:100, tb:  0, p:75, m:200},
           {t:"E_FAST", v:150, o:200, b:150, tb:300, p:75, m:200},
-          {t:"OPTNEW", v:500, o:200, b:200, tb:  0, p:75, m:300},
+          {t:"OPTNEW", v:300, o:400, b:200, tb:  0, p:75, m:300},
           {t:"PRNEW",  v:500, o:200, b:250, tb:300, p:75, m:300},
+          {t:"ДОП_ОБУЧЕНИЕ", v:0,   o:200, b:0,   tb:  0, p:0,  m:0},
+          {t:"ДОП_ПОДПИСЬ",  v:250, o:200, b:100, tb:  0, p:75, m:200},
         ],
 
         async init() {
@@ -791,7 +794,9 @@
         },
         tagClass(t) {
           return {E:"tag-E", ST:"tag-ST", E_FAST:"tag-EFAST",
-                  OPTNEW:"tag-OPTNEW", PRNEW:"tag-PRNEW"}[t] || "tag-other";
+                  OPTNEW:"tag-OPTNEW", PRNEW:"tag-PRNEW",
+                  "ДОП_ОБУЧЕНИЕ":"tag-DOP_OBUCHENIE",
+                  "ДОП_ПОДПИСЬ":"tag-DOP_PODPIS"}[t] || "tag-other";
         },
 
         // ── Перенос ─────────────────────────────────────────────────────────

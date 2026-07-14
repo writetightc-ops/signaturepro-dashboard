@@ -125,14 +125,14 @@ def apply_conditional_formatting(sh, ws):
                 "index": 1,
             }
         },
-        # Приоритет 2: OPTNEW / OPT2 / PRNEW -> светло-серый
+        # Приоритет 2: OPTNEW / PRNEW / ДОП_ОБУЧЕНИЕ / ДОП_ПОДПИСЬ -> светло-серый
         {
             "addConditionalFormatRule": {
                 "rule": {
                     "ranges": [grid],
                     "booleanRule": {
                         "condition": {"type": "CUSTOM_FORMULA",
-                                      "values": [{"userEnteredValue": '=OR($F2="OPTNEW",$F2="OPT2",$F2="PRNEW")'}]},
+                                      "values": [{"userEnteredValue": '=OR($F2="OPTNEW",$F2="PRNEW",$F2="ДОП_ОБУЧЕНИЕ",$F2="ДОП_ПОДПИСЬ")'}]},
                         "format": {"backgroundColor": _rgb(240, 240, 240)},
                     },
                 },
@@ -230,15 +230,16 @@ def _last_data_row(ws):
 def add_total_formula(ws):
     """
     Столбец X "Итого ЗП" — полная сумма заработка каллиграфа по строке:
-      варианты + правки*75 + обучение + тарифный_бонус + бонус_без_правок
+      варианты + правки + обучение + тарифный_бонус + бонус_без_правок
 
-    Тарифные ставки:
-      Варианты    : E/ST/E_FAST=150, OPTNEW/PRNEW=500
-      Правки      : 75 за каждую (I,K,M,O,U,W)
-      Обучение    : 200 (если P заполнена)
-      Тарифный бонус: E_FAST/PRNEW=300 когда варианты готовы (G заполнена)
-      Бонус без правок: только если B=TRUE И 0 правок (I,K,M,O,U,W пусты)
-        E/ST=100, E_FAST=150, OPTNEW=200, PRNEW=250
+    Логика:
+      - Варианты: по тарифу, когда заполнена дата «Варианты» (G).
+      - Обучение: по тарифу, когда заполнена дата «Обучение» (P).
+      - Правки: COUNTA правок × ставку тарифа.
+      - Тарифный бонус: вместе с вариантами (G) для E_FAST / PRNEW.
+      - Бонус без правок: при B=TRUE, G заполнено и 0 правок — по тарифу.
+    Ставки захардкожены — синхронизируются вручную с листом «Ставки»,
+    _FALLBACK_CAL_RATES в dashboard.py и _build_total_formula в gsheets.py.
     """
     ldr = _last_data_row(ws)
     if ldr < 2:
@@ -247,28 +248,38 @@ def add_total_formula(ws):
 
     formulas = []
     for r in range(2, ldr + 1):
-        # Варианты: E/ST/E_FAST=150, OPTNEW/PRNEW=500, OPT2=300
+        # Варианты: (тариф → ставка)
         var = (
             f'IF(G{r}<>"",'
             f'IF(OR(F{r}="E",F{r}="ST",F{r}="E_FAST"),150,'
-            f'IF(OR(F{r}="OPTNEW",F{r}="PRNEW"),500,'
-            f'IF(F{r}="OPT2",300,0))),0)'
+            f'IF(F{r}="OPTNEW",300,'
+            f'IF(F{r}="PRNEW",500,'
+            f'IF(F{r}="ДОП_ПОДПИСЬ",250,'
+            f'IF(F{r}="ДОП_ОБУЧЕНИЕ",0,0))))),0)'
         )
-        # Правки 1-6 (столбцы I,K,M,O,U,W)
-        pravki = f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})*75'
-        # Обучение
-        obuchen = f'IF(P{r}<>"",200,0)'
-        # Тарифный бонус (вместе с вариантами)
+        # Правки: ставка 75 для всех, кроме ДОП_ОБУЧЕНИЕ (0)
+        pravki = (
+            f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})*'
+            f'IF(F{r}="ДОП_ОБУЧЕНИЕ",0,75)'
+        )
+        # Обучение: (тариф → ставка)
+        obuchen = (
+            f'IF(P{r}<>"",'
+            f'IF(F{r}="OPTNEW",400,'
+            f'IF(F{r}="ДОП_ОБУЧЕНИЕ",200,200)),0)'
+        )
+        # Тарифный бонус — вместе с вариантами (G)
         tar_bonus = f'IF(AND(G{r}<>"",OR(F{r}="E_FAST",F{r}="PRNEW")),300,0)'
-        # Бонус без правок: E/ST=100, E_FAST=150, OPTNEW=200, PRNEW=250, OPT2=150
         no_pravki_check = f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})=0'
+        # Бонус без правок — при B=TRUE, G заполнено, 0 правок
         bonus_bp = (
             f'IF(AND(B{r}=TRUE,G{r}<>"",{no_pravki_check}),'
             f'IF(OR(F{r}="E",F{r}="ST"),100,'
             f'IF(F{r}="E_FAST",150,'
             f'IF(F{r}="OPTNEW",200,'
             f'IF(F{r}="PRNEW",250,'
-            f'IF(F{r}="OPT2",150,0))))),0)'
+            f'IF(F{r}="ДОП_ПОДПИСЬ",100,'
+            f'IF(F{r}="ДОП_ОБУЧЕНИЕ",0,0)))))),0)'
         )
         formula = f'={var}+{pravki}+{obuchen}+{tar_bonus}+{bonus_bp}'
         formulas.append([formula])

@@ -410,24 +410,49 @@ def _rgb(r, g, b):
 
 
 def _build_total_formula(r):
-    """Строит формулу «Итого ЗП» для строки r (1-based номер строки листа)."""
+    """
+    Строит формулу «Итого ЗП» для строки r (1-based номер строки листа).
+    Логика:
+      - Варианты: по тарифу, когда заполнена дата «Варианты» (G).
+      - Обучение: по тарифу, когда заполнена дата «Обучение» (P).
+      - Правки: COUNTA правок × ставку тарифа.
+      - Тарифный бонус: вместе с вариантами (G) для тарифов E_FAST / PRNEW.
+      - Бонус без правок: при B=TRUE, G заполнено и 0 правок — по тарифу.
+    Ставки захардкожены — синхронизируются вручную с листом «Ставки»
+    и _FALLBACK_CAL_RATES в dashboard.py.
+    """
+    # Варианты: (тариф → ставка)
     var = (
         f'IF(G{r}<>"",'
         f'IF(OR(F{r}="E",F{r}="ST",F{r}="E_FAST"),150,'
-        f'IF(OR(F{r}="OPTNEW",F{r}="PRNEW"),500,'
-        f'IF(F{r}="OPT2",300,0))),0)'
+        f'IF(F{r}="OPTNEW",300,'
+        f'IF(F{r}="PRNEW",500,'
+        f'IF(F{r}="ДОП_ПОДПИСЬ",250,'
+        f'IF(F{r}="ДОП_ОБУЧЕНИЕ",0,0))))),0)'
     )
-    pravki    = f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})*75'
-    obuchen   = f'IF(P{r}<>"",200,0)'
+    # Правки: ставка 75 для всех, кроме ДОП_ОБУЧЕНИЕ (0)
+    pravki = (
+        f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})*'
+        f'IF(F{r}="ДОП_ОБУЧЕНИЕ",0,75)'
+    )
+    # Обучение: (тариф → ставка)
+    obuchen = (
+        f'IF(P{r}<>"",'
+        f'IF(F{r}="OPTNEW",400,'
+        f'IF(F{r}="ДОП_ОБУЧЕНИЕ",200,200)),0)'
+    )
+    # Тарифный бонус — вместе с вариантами (G)
     tar_bonus = f'IF(AND(G{r}<>"",OR(F{r}="E_FAST",F{r}="PRNEW")),300,0)'
     no_pravki = f'COUNTA(I{r},K{r},M{r},O{r},U{r},W{r})=0'
-    bonus_bp  = (
+    # Бонус без правок — при B=TRUE, G заполнено, 0 правок
+    bonus_bp = (
         f'IF(AND(B{r}=TRUE,G{r}<>"",{no_pravki}),'
         f'IF(OR(F{r}="E",F{r}="ST"),100,'
         f'IF(F{r}="E_FAST",150,'
         f'IF(F{r}="OPTNEW",200,'
         f'IF(F{r}="PRNEW",250,'
-        f'IF(F{r}="OPT2",150,0))))),0)'
+        f'IF(F{r}="ДОП_ПОДПИСЬ",100,'
+        f'IF(F{r}="ДОП_ОБУЧЕНИЕ",0,0)))))),0)'
     )
     return f'={var}+{pravki}+{obuchen}+{tar_bonus}+{bonus_bp}'
 
@@ -500,10 +525,10 @@ def _apply_sheet_formatting(sh, ws):
                           "values": [{"userEnteredValue": '=OR($F2="E",$F2="ST",$F2="E_FAST")'}]},
             "format": {"backgroundColor": _rgb(255, 255, 204)},
         }}, "index": 1}},
-        # OPTNEW / OPT2 / PRNEW → светло-серый
+        # OPTNEW / PRNEW / ДОП_ОБУЧЕНИЕ / ДОП_ПОДПИСЬ → светло-серый
         {"addConditionalFormatRule": {"rule": {"ranges": [grid], "booleanRule": {
             "condition": {"type": "CUSTOM_FORMULA",
-                          "values": [{"userEnteredValue": '=OR($F2="OPTNEW",$F2="OPT2",$F2="PRNEW")'}]},
+                          "values": [{"userEnteredValue": '=OR($F2="OPTNEW",$F2="PRNEW",$F2="ДОП_ОБУЧЕНИЕ",$F2="ДОП_ПОДПИСЬ")'}]},
             "format": {"backgroundColor": _rgb(240, 240, 240)},
         }}, "index": 2}},
     ]
@@ -571,7 +596,12 @@ def _apply_sheet_formatting(sh, ws):
 
 def transfer_orders(spreadsheet_url, credentials_file, from_sheet_name, to_sheet_name):
     """
-    Переносит незавершённые заказы (без даты завершения) из одного листа в другой.
+    Переносит незавершённые заказы из одного листа в другой.
+
+    «Завершённым» считается заказ с галкой в столбце B (Статус = TRUE) —
+    такие строки остаются в исходном листе и НЕ переносятся.
+    Все прочие строки (без галки) переносятся на целевой лист.
+
     Копирует строки через copyPaste (сохраняет форматирование ячеек),
     затем применяет условное форматирование и валидацию дат к целевому листу.
     Возвращает количество перенесённых строк.
@@ -592,7 +622,7 @@ def transfer_orders(spreadsheet_url, credentials_file, from_sheet_name, to_sheet
     headers   = all_rows[0]
     data_rows = all_rows[1:]
 
-    DONE_COL = 17  # 0-based: «Дата завершения»
+    STATUS_COL = 1  # 0-based: столбец B «Статус» (чекбокс)
 
     # Определяем строки для переноса (0-based в листе, строка 0 = заголовок)
     move_row_indices = []  # 0-based индексы строк листа (заголовок = 0)
@@ -602,11 +632,11 @@ def transfer_orders(spreadsheet_url, credentials_file, from_sheet_name, to_sheet
         r = row + [""] * 5
         if not r[0] and not r[2]:
             continue
-        done = r[DONE_COL].strip() if DONE_COL < len(r) else ""
-        if not done:
-            move_row_indices.append(i + 1)  # +1 — заголовок занимает строку 0
-        else:
+        # Завершённые (B=TRUE) — оставляем; остальные — переносим
+        if _parse_bool(r[STATUS_COL]):
             rows_to_keep.append(row)
+        else:
+            move_row_indices.append(i + 1)  # +1 — заголовок занимает строку 0
 
     if not move_row_indices:
         return 0
